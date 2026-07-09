@@ -12,6 +12,14 @@ dependencies = [
     "pygobject>=3.42",
 ]
 
+[project.optional-dependencies]
+# Real window tracking in the Frame (see shell/toplevel_tracker.py).
+# Only takes effect on compositors offering zwlr_foreign_toplevel_manager_v1
+# (wlroots-based: Wayfire, Sway, Hyprland). Optional because GNOME/Mutter
+# and other compositors without this protocol still work fine without it —
+# the shell falls back to on_app_close-based tracking.
+wayland-toplevels = ["pywayland>=0.4"]
+
 [project.scripts]
 sugar-next = "sugar_next.shell.main:main"
 

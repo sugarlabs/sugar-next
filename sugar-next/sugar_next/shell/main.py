@@ -15,12 +15,14 @@ from sugar_next.shell.theme import manager as theme_manager
 from sugar_next.shell.palette import dominant_color_hex
 from sugar_next.shell.settings import SettingsPanel
 from sugar_next.shell.settings_store import SettingsStore, icon_size_px
+from sugar_next.shell.toplevel_tracker import TopLevelTracker
 
 
 class SugarShell(Gtk.Application):
     def __init__(self):
         super().__init__(application_id="org.sugarlabs.SugarNext")
         self.connect("activate", self._on_activate)
+        self.connect("shutdown", self._on_shutdown)
 
     def _on_activate(self, app):
         hook_registry.load()
@@ -49,8 +51,20 @@ class SugarShell(Gtk.Application):
         )
 
         self.frame = SugarFrame()
+
+        # Real window tracking (only shows apps with an actual open
+        # window, like GNOME's taskbar) when the compositor offers
+        # zwlr_foreign_toplevel_manager_v1 — wlroots-based compositors
+        # only (Wayfire, Sway; not GNOME/Mutter). Falls back to the
+        # existing on_app_close-based "apps launched this session"
+        # tracking when the protocol is unavailable.
+        self.toplevel_tracker = TopLevelTracker(
+            on_open=self._on_toplevel_open,
+            on_close=self._on_toplevel_close,
+        )
+        self.toplevel_tracker.start()
         hook_registry.subscribe(
-            "on_app_close", lambda app_id, app_info: self.frame.remove_running(app_id)
+            "on_app_close", lambda app_id, app_info: self._on_app_process_closed(app_id)
         )
 
         icon_size = icon_size_px(self.settings_store.get("icon_size"))
@@ -106,6 +120,9 @@ class SugarShell(Gtk.Application):
         if y <= 2 and x >= self.window.get_width() - 2:
             self.frame.reveal()
 
+    def _on_shutdown(self, app):
+        self.toplevel_tracker.stop()
+
     def _on_app_launched(self, bundle):
         self.frame.add_running(bundle)
         if self.settings_store.get("accent_color"):
@@ -114,6 +131,42 @@ class SugarShell(Gtk.Application):
             return
         color = dominant_color_hex(bundle.icon)
         theme_manager.set_accent_tint(color)
+
+    def _on_toplevel_open(self, wayland_app_id, title):
+        # No-op: apps already appear in the Frame at launch time via
+        # add_running(). Real-window tracking here is only used to
+        # *remove* apps once their last window closes — see
+        # _on_toplevel_close. (Wiring toplevel-open to add_running too
+        # would need building a DesktopBundle from a bare Wayland app-id,
+        # which isn't always a 1:1 match with a .desktop id — future work
+        # if the Frame needs to show windows opened outside the shell.)
+        pass
+
+    def _on_toplevel_close(self, wayland_app_id, title):
+        if self.toplevel_tracker.available is not True:
+            return
+        # Only remove if no other open window still has this app_id —
+        # e.g. two Nautilus windows: closing one shouldn't drop it from
+        # the Frame while the other is still open.
+        if not self._has_open_toplevel(wayland_app_id):
+            self.frame.remove_running(wayland_app_id)
+
+    def _has_open_toplevel(self, wayland_app_id):
+        return any(
+            state.get("app_id") == wayland_app_id
+            for state in self.toplevel_tracker._toplevels.values()
+        )
+
+    def _on_app_process_closed(self, app_id):
+        # Fallback path (see toplevel_tracker.py): only takes over when
+        # the compositor doesn't offer zwlr_foreign_toplevel_manager_v1
+        # (e.g. GNOME/Mutter). On a wlroots compositor, real window
+        # tracking (_on_toplevel_close) is authoritative and this would
+        # be redundant — but harmless, since remove_running() on an
+        # already-removed app_id is a no-op.
+        if self.toplevel_tracker.available is True:
+            return
+        self.frame.remove_running(app_id)
 
 
 def main():

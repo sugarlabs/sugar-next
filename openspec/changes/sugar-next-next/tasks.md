@@ -89,17 +89,27 @@
        added mid-implementation per user feedback: "el shell debería hacer
        como GNOME y mostrar solo lo activo")
 
-- [ ] 10.1 Add `wlr-foreign-toplevel-management` client via `pywayland`,
+- [x] 10.1 Add `wlr-foreign-toplevel-management` client via `pywayland`,
       gated behind protocol-availability detection (GNOME/Mutter does not
       implement this protocol at all — only wlroots-based compositors
       like Wayfire/Sway do; confirmed via `wayland-info` in this dev
-      environment, which shows zero `zwlr_*` interfaces)
-- [ ] 10.2 Wire toplevel create/close/title events into the Frame's
-      running-apps list, replacing the current "apps launched this
-      session" heuristic where the protocol is available
-- [ ] 10.3 Fallback to current behavior (session-launched apps only, via
-      `on_app_close`) when the protocol is unavailable — never crash or
-      show nothing
+      environment, which shows zero `zwlr_*` interfaces). Implemented in
+      `shell/toplevel_tracker.py`; protocol bindings hand-generated via
+      `pywayland.scanner` from the upstream wlr-protocols XML and vendored
+      in `sugar_next/_wayland_wlr/` (pywayland does not ship wlr-* bindings
+      out of the box, only the newer `ext_foreign_toplevel_list_v1`
+      standard, which GNOME/Mutter also does not implement). `pywayland`
+      added as an optional dependency (`wayland-toplevels` extra).
+- [x] 10.2 Wire toplevel create/close/title events into the Frame's
+      running-apps list — `main.py`'s `_on_toplevel_close` removes an app
+      once its last tracked window closes, only active when
+      `toplevel_tracker.available is True`.
+- [x] 10.3 Fallback to current behavior (session-launched apps only, via
+      `on_app_close`) when the protocol is unavailable — `main.py`'s
+      `_on_app_process_closed` only acts when the tracker reports
+      `available is not True`, so exactly one path is live at a time.
+      Verified in this dev environment (GNOME/Mutter, tracker reports
+      unavailable): shell starts cleanly, no crash, no exceptions.
 - [ ] 10.4 Verify against a real Wayfire session (this repo's dev
       environment is GNOME/Mutter and cannot exercise the wlroots path;
       see `wayland-compositor-dev` skill for setting up nested Wayfire)
