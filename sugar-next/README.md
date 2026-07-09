@@ -100,6 +100,12 @@ podman run --rm \
 The container shares your host Wayland compositor socket — the shell
 opens as a regular window.
 
+> **Troubleshooting:** if the build fails with `pasta failed ...
+> /dev/net/tun: No such device`, rootless networking is unavailable —
+> typically because the kernel was updated and the running kernel's
+> modules are gone until you reboot. Either reboot, or build with
+> `podman build --network=host -t sugar-next -f Containerfile .`
+
 ## Using the shell
 
 - **App Grid** — every application on the system, alphabetized. Type in

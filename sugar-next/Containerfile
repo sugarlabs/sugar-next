@@ -3,6 +3,11 @@
 # Build:
 #   podman build -t sugar-next -f Containerfile .
 #
+# If the build fails with "pasta failed ... /dev/net/tun: No such device",
+# rootless networking is unavailable (commonly after a kernel update, until
+# you reboot). Work around it with:
+#   podman build --network=host -t sugar-next -f Containerfile .
+#
 # Run (Wayland; shares the host compositor socket):
 #   podman run --rm \
 #     -e WAYLAND_DISPLAY -e XDG_RUNTIME_DIR \
