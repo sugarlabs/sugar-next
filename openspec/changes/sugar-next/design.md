@@ -8,8 +8,10 @@
 sugar-next/
 ├── shell/                  # GTK4 shell (replaces jarabe)
 │   ├── main.py             # Entry point
-│   ├── app-grid.py         # App grid view
-│   ├── frame.py            # Universal frame (future)
+│   ├── home-view.py        # Configurable Home View (desktop/grid/search)
+│   ├── app-grid.py         # App grid widget
+│   ├── frame.py            # Universal frame
+│   ├── settings.py         # Settings panel
 │   └── extensions/         # Extension loader
 ├── bundles/                # Bundle types
 │   ├── activity-bundle.py  # Sugar activity wrapper
@@ -29,7 +31,38 @@ sugar-next/
 | App scanner | XDG Desktop Menu spec | Zero-config, works with any Linux distro |
 | Packaging | pip + OCI | Self-contained, any distro; no Nix dependency |
 | Compositor | Wayland (host compositor) | No embedded compositor needed — Sugar Next runs as a normal Wayland client |
-| Collaboration | XMPP (link-local + federated) | Zero-config LAN discovery + standard server federation; no account required for local use |
+| Home View | Pluggable layouts (desktop grid, app grid, search-first) | End-user chooseable; schools can lock a layout |
+| Collaboration | XMPP hooks (exploratory) | Presence hooks in extension API; demo chat as first step |
+
+## Home View (pluggable)
+
+The Home View is the learner's primary workspace. Three built-in layouts:
+
+1. **Desktop grid** (Endless-inspired) — icons float on a user-selectable
+   background image. Supports container folders that expand into sub-grids
+   with pagination. Default for full-shell mode.
+
+2. **App Grid** (current prototype) — `Gtk.FlowBox` with search bar, no
+   background image visible behind icons. Default for windowed mode.
+
+3. **Search-first** — blank canvas with a search bar at top. No icons
+   visible until the learner types. Minimal distraction, full focus.
+
+Layouts are widgets that implement a common interface, swappable at
+runtime. Additional layouts can be shipped as extensions.
+
+## The four views (reimagined)
+
+Sugar's classic four-view navigation recontextualized for modern hardware:
+
+| View | Key | Description |
+|------|-----|-------------|
+| Focus | — | Fullscreen app window (any app, not just "activities") |
+| Home | F6 | The configurable Home View (desktop grid, app grid, or search) |
+| Groups | F7 | Named, sharable contexts — a "project" spanning multiple apps and people |
+| Neighborhood | F8 | Peer discovery: link-local + federated presence |
+
+F6/F7/F8 are default bindings, configurable in Settings.
 
 ## App Grid (Fase 1)
 
@@ -37,6 +70,7 @@ sugar-next/
 - Icons from `.desktop` files (via `Gio.DesktopAppInfo`)
 - Click → `Gio.AppInfo.launch()`
 - Search bar at the top
+- Container folders: category clusters that expand into sub-grids
 - Future: favorite/star system, activity overlay
 
 ## Extension API (Fase 2)
@@ -51,6 +85,14 @@ def on_app_launch(app_id: str, app_info: Gio.AppInfo) -> None:
 def on_shell_start() -> None:
     """Called when the shell starts."""
     pass
+
+def on_peer_join(peer_id: str, peer_name: str) -> None:
+    """Called when a peer is discovered on the LAN."""
+    pass
+
+def on_peer_leave(peer_id: str) -> None:
+    """Called when a peer disconnects."""
+    pass
 ```
 
 Minimal, synchronous hooks. No GObject, no decorators, no registration step.
@@ -58,7 +100,7 @@ Minimal, synchronous hooks. No GObject, no decorators, no registration step.
 ## Frame (Fase 3+)
 
 - Shows all windows (not just Sugar activities)
-- Accessed via hot-corner or keybinding
+- Accessed via hot-corner or keybinding (F6)
 - Per-window palette: "Pin to favorites", "Add to Journal", etc.
 - Icons mode first, thumbnails later
 
@@ -68,9 +110,7 @@ client, the shell cannot enumerate other clients' windows — that needs the
 which would add a pywayland dependency and compositor coupling. Frame v0
 therefore shows **pinned favorites + apps launched this session** (hot
 corner + F6, per-item palette). True universal window listing is future
-work, likely its own OpenSpec change — the candidate path is the wlroots
-`wlr-foreign-toplevel-management` protocol (via pywayland), which covers
-Wayfire/Sway/labwc and other wlroots compositors.
+work.
 
 ## Design system
 
@@ -81,6 +121,30 @@ Wayfire/Sway/labwc and other wlroots compositors.
   attention is without looking away from the content.
 - **Tokens**: CSS custom properties (`--sn-bg`, `--sn-accent`, etc.),
   documented in `sugar-next/HIG.md`.
+- **Background image**: user-selectable, stretches or tiles.
+- **Accent color**: user-pickable from presets or custom hex.
+
+## Settings
+
+A minimal Settings panel accessible from the Frame:
+
+- Background image picker
+- Accent color picker
+- Contrast slider
+- Home View layout selector
+- Extension manager (list, enable, disable)
+- Keybinding viewer
+- About
+
+## XDG FreeDesktop compliance
+
+- `.desktop` file installed by `bootstrap.sh` (done)
+- XDG Desktop Menu spec for app scanning (done)
+- XDG Base Directory spec (`~/.local/share/sugar-next/`, `~/.config/sugar-next/`)
+- `org.sugarlabs.SugarNext` D-Bus name (future)
+- `wlr-foreign-toplevel-management` protocol for window listing (future)
+- MIME type associations for Journal entries (future)
+- StatusNotifierItem (system tray) for background services (future)
 
 ## Activity model (reimagined)
 
@@ -95,14 +159,16 @@ This is future work — the extension API must first prove itself. But the
 principle is set: activities are not apps, they are agglomerations of apps
 in time.
 
-## Collaboration (Fase 5)
+## Collaboration (exploratory)
 
-Collaboration is a property of the environment, not a feature of an
-activity. The shell provides a presence bus that any extension or app can
-use:
+Collaboration is a design direction, not a committed feature. The first
+concrete step is presence hooks in the extension API (`on_peer_join`,
+`on_peer_leave`) and a demo P2P chat extension. Full XMPP infrastructure
+(link-local + federated) is documented as a reference for future research
+on what is pragmatic to deliver.
 
 ```
-Presence bus (XMPP)
+Presence bus (XMPP) — exploratory design
 ├── link-local: zero-config LAN discovery (Avahi/DNS-SD), no account
 ├── federated: standard XMPP server for cross-network presence
 └── Share substrate exposed via extension API:
@@ -111,7 +177,7 @@ Presence bus (XMPP)
     └── app-level data channels (extensions opt in)
 ```
 
-The presence bus runs as a shell service — it must be active for any peer
+The presence bus would be a shell service — it must be active for any peer
 discovery. The share substrate is an API that apps call through extensions,
 never coupling them to XMPP directly.
 
@@ -137,10 +203,9 @@ CREATE TABLE entries (
 );
 ```
 
-`on_app_close` and explicit publish need shell support that doesn't exist
-yet (process tracking, UI) — deferred with the rest of window management.
 A promising richer event source is **Zeitgeist** (the freedesktop activity
 log): instead of the shell tracking everything itself, the Journal
 extension could subscribe to Zeitgeist events (documents opened, apps
-closed) and keep SQLite only as its publish store. To evaluate in the
-follow-up change alongside wlroots toplevel tracking.
+closed) and keep SQLite only as its publish store. Integrating with
+**Nautilus** or other file managers for Journal-aware file browsing is
+also a research direction.
