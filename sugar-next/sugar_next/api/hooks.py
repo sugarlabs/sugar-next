@@ -13,6 +13,9 @@ step, no decorators, no GObject knowledge required::
     def on_app_launch(app_id, app_info):
         print(f"launching {app_id}")
 
+    def on_peer_join(peer_id, peer_name):
+        print(f"{peer_name} joined")
+
 Hooks are synchronous and best-effort: an exception in one extension is
 logged and never breaks the shell or other extensions.
 """
@@ -27,7 +30,16 @@ log = logging.getLogger("sugar-next.hooks")
 #: Hook names extensions may define. Signatures:
 #:   on_shell_start()
 #:   on_app_launch(app_id: str, app_info: Gio.AppInfo)
-HOOK_NAMES = ("on_shell_start", "on_app_launch")
+#:   on_app_close(app_id: str, app_info: Gio.AppInfo)
+#:   on_peer_join(peer_id: str, peer_name: str)
+#:   on_peer_leave(peer_id: str)
+HOOK_NAMES = (
+    "on_shell_start",
+    "on_app_launch",
+    "on_app_close",
+    "on_peer_join",
+    "on_peer_leave",
+)
 
 
 def extensions_dir() -> Path:
@@ -37,10 +49,58 @@ def extensions_dir() -> Path:
     return Path(data_home) / "sugar-next" / "extensions"
 
 
+#: Suffix appended to a disabled extension's filename. load() only globs
+#: *.py, so a disabled extension (my-ext.py.disabled) is simply invisible
+#: to the loader — no separate enabled/disabled list to keep in sync.
+_DISABLED_SUFFIX = ".disabled"
+
+
+def list_extensions(directory=None):
+    """Return [(name, enabled)] for every extension file, enabled or not.
+
+    *name* is the extension's base name (without .py or .py.disabled).
+    """
+    directory = Path(directory) if directory is not None else extensions_dir()
+    if not directory.is_dir():
+        return []
+    entries = {}
+    for path in directory.iterdir():
+        if path.name.endswith(_DISABLED_SUFFIX) and path.name[: -len(_DISABLED_SUFFIX)].endswith(".py"):
+            name = path.name[: -len(_DISABLED_SUFFIX)][: -len(".py")]
+            entries[name] = False
+        elif path.suffix == ".py":
+            entries[path.stem] = True
+    return sorted(entries.items())
+
+
+def set_extension_enabled(name, enabled, directory=None):
+    """Enable or disable the extension called *name* by renaming its file."""
+    directory = Path(directory) if directory is not None else extensions_dir()
+    enabled_path = directory / f"{name}.py"
+    disabled_path = directory / f"{name}.py{_DISABLED_SUFFIX}"
+    if enabled:
+        if disabled_path.is_file():
+            disabled_path.rename(enabled_path)
+    else:
+        if enabled_path.is_file():
+            enabled_path.rename(disabled_path)
+
+
 class HookRegistry:
     def __init__(self):
         self._hooks = {name: [] for name in HOOK_NAMES}
+        self._internal_listeners = {name: [] for name in HOOK_NAMES}
         self._loaded = False
+
+    def subscribe(self, hook_name, callback):
+        """Register a shell-internal listener for *hook_name*.
+
+        Unlike extension hooks (scanned from disk by load()), internal
+        listeners are added directly by shell code — e.g. the Frame
+        removing an app when on_app_close fires. Survives calls to
+        load(), since load() only resets extension-provided hooks.
+        """
+        self._internal_listeners.setdefault(hook_name, []).append(callback)
 
     def load(self, directory=None):
         """Scan a directory for extension files and collect their hooks."""
@@ -73,9 +133,14 @@ class HookRegistry:
             return None
 
     def call(self, hook_name, *args, **kwargs):
-        """Invoke every extension implementing *hook_name*."""
+        """Invoke every extension and internal listener for *hook_name*."""
         if not self._loaded:
             self.load()
+        for fn in self._internal_listeners.get(hook_name, ()):
+            try:
+                fn(*args, **kwargs)
+            except Exception:
+                log.exception("Internal hook listener %s failed", hook_name)
         for fn in self._hooks.get(hook_name, ()):
             try:
                 fn(*args, **kwargs)

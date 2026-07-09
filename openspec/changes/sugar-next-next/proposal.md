@@ -27,8 +27,6 @@ re-opening an already-archived proposal.
   remaining FreeDesktop citizenship items from the HIG's compliance list:
   `org.sugarlabs.SugarNext` D-Bus name, MIME type associations for Journal
   entries, and StatusNotifierItem (system tray) for background services.
-- Support school-locked layouts via config file (deployment-time policy,
-  not a runtime toggle exposed to learners).
 - Add exploratory peer collaboration: `on_peer_join`/`on_peer_leave` hooks
   in the extension API, a demo link-local P2P chat extension, and a
   written comparison of XMPP link-local vs. WebRTC vs. custom UDP as

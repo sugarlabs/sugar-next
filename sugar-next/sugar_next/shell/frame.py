@@ -86,10 +86,12 @@ class SugarFrame(Gtk.Revealer):
         provider.load_from_string(
             """
             .frame-bar {
-                background-color: #282850;
+                background-color: var(--sn-bg-alt);
+                border-top: 2px solid var(--sn-accent);
                 border-radius: 0 0 12px 12px;
                 padding: 8px 16px;
                 min-height: 48px;
+                transition: border-color 400ms ease;
             }
             """
         )
@@ -113,9 +115,19 @@ class SugarFrame(Gtk.Revealer):
         )
         bar.append(self._running_box)
 
+        self._settings_button = Gtk.MenuButton()
+        self._settings_button.add_css_class("flat")
+        self._settings_button.set_icon_name("emblem-system-symbolic")
+        self._settings_button.set_hexpand(True)
+        self._settings_button.set_halign(Gtk.Align.END)
+        bar.append(self._settings_button)
+
         self._favorite_ids = self._load_favorites()
         self._running_ids = set()
         self._rebuild_favorites()
+
+    def set_settings_panel(self, popover):
+        self._settings_button.set_popover(popover)
 
     def toggle(self):
         self.set_reveal_child(not self.get_reveal_child())
@@ -189,4 +201,23 @@ class SugarFrame(Gtk.Revealer):
                 ("Add to Journal (coming soon)", None),
             ],
         )
+        item.app_id = bundle.app_id
         self._running_box.append(item)
+
+    def remove_running(self, app_id, app_info=None):
+        """Stop showing an app in the frame once it has closed.
+
+        Only apps this shell can observe closing (via on_app_close — see
+        the sugar-next-next design doc's note on PID-watch limitations)
+        are removed; apps launched outside the shell stay listed until
+        universal window tracking exists.
+        """
+        if app_id not in self._running_ids:
+            return
+        self._running_ids.discard(app_id)
+        child = self._running_box.get_first_child()
+        while child is not None:
+            next_child = child.get_next_sibling()
+            if getattr(child, "app_id", None) == app_id:
+                self._running_box.remove(child)
+            child = next_child

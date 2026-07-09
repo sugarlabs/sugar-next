@@ -5,6 +5,10 @@
             "path": ".."
         },
         {
+            "name": "sugar-next",
+            "path": "../sugar-next"
+        },
+        {
             "name": "sugar (jarabe)",
             "path": "../repos/sugar"
         },

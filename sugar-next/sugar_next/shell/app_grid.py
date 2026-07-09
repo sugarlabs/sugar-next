@@ -4,11 +4,13 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Gdk", "4.0")
 from gi.repository import Gdk, Gtk, Gio, GLib, Pango
 
+from sugar_next.shell.home_view import HomeViewLayout
+
 
 class _AppGridCell(Gtk.Box):
     __gtype_name__ = "SugarNextAppGridCell"
 
-    def __init__(self, bundle, on_launched=None, on_pin=None):
+    def __init__(self, bundle, on_launched=None, on_pin=None, icon_size=48):
         super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         self.bundle = bundle
         self._on_launched = on_launched
@@ -26,7 +28,7 @@ class _AppGridCell(Gtk.Box):
             self.icon = Gtk.Image.new_from_gicon(icon_info)
         else:
             self.icon = Gtk.Image.new_from_icon_name("application-x-executable")
-        self.icon.set_pixel_size(48)
+        self.icon.set_pixel_size(icon_size)
         self.append(self.icon)
 
         self.label = Gtk.Label(label=bundle.name)
@@ -67,8 +69,11 @@ class _AppGridCell(Gtk.Box):
         popover.popup()
 
 
-class SugarAppGrid(Gtk.Box):
+class SugarAppGrid(Gtk.Box, HomeViewLayout):
     __gtype_name__ = "SugarNextAppGrid"
+
+    layout_id = "app-grid"
+    layout_name = "App Grid"
 
     _CSS = """
         .app-grid-cell {
@@ -88,10 +93,11 @@ class SugarAppGrid(Gtk.Box):
         }
     """
 
-    def __init__(self, on_launched=None, on_pin=None):
+    def __init__(self, on_launched=None, on_pin=None, icon_size=48):
         super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         self._on_launched = on_launched
         self._on_pin = on_pin
+        self._icon_size = icon_size
 
         provider = Gtk.CssProvider()
         provider.load_from_string(self._CSS)
@@ -136,7 +142,10 @@ class SugarAppGrid(Gtk.Box):
         bundles = self._load_bundles()
         for bundle in bundles:
             cell = _AppGridCell(
-                bundle, on_launched=self._on_launched, on_pin=self._on_pin
+                bundle,
+                on_launched=self._on_launched,
+                on_pin=self._on_pin,
+                icon_size=self._icon_size,
             )
             self._all_cells.append(cell)
             self._flow_box.append(cell)
@@ -146,8 +155,22 @@ class SugarAppGrid(Gtk.Box):
 
         return DesktopBundle.sorted_apps()
 
+    def set_icon_size(self, icon_size):
+        self._icon_size = icon_size
+        while child := self._flow_box.get_first_child():
+            self._flow_box.remove(child)
+        self._all_cells = []
+        self._populate()
+
     def _on_search_changed(self, entry):
         self._flow_box.invalidate_filter()
+
+    def on_activate(self):
+        pass
+
+    def on_deactivate(self):
+        self._search_entry.set_text("")
+        self._scrolled.get_vadjustment().set_value(0)
 
     def _filter_func(self, child):
         # FlowBox wraps each cell in a Gtk.FlowBoxChild.

@@ -62,3 +62,42 @@ def test_add_running_deduplicates(tmp_path, monkeypatch):
         children += 1
         child = child.get_next_sibling()
     assert children == 1
+
+
+def _running_box_count(frame):
+    count = 0
+    child = frame._running_box.get_first_child()
+    while child is not None:
+        count += 1
+        child = child.get_next_sibling()
+    return count
+
+
+def test_remove_running_clears_the_icon(tmp_path, monkeypatch):
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
+    frame = SugarFrame()
+    frame.add_running(_stub_bundle("app.desktop"))
+    assert _running_box_count(frame) == 1
+
+    frame.remove_running("app.desktop")
+    assert _running_box_count(frame) == 0
+    assert "app.desktop" not in frame._running_ids
+
+
+def test_remove_running_only_removes_matching_app(tmp_path, monkeypatch):
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
+    frame = SugarFrame()
+    frame.add_running(_stub_bundle("app-a.desktop"))
+    frame.add_running(_stub_bundle("app-b.desktop"))
+
+    frame.remove_running("app-a.desktop")
+    assert _running_box_count(frame) == 1
+    assert frame._running_ids == {"app-b.desktop"}
+
+
+def test_remove_running_unknown_app_is_a_no_op(tmp_path, monkeypatch):
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
+    frame = SugarFrame()
+    frame.add_running(_stub_bundle("app.desktop"))
+    frame.remove_running("never-launched.desktop")
+    assert _running_box_count(frame) == 1

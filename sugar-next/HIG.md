@@ -12,9 +12,9 @@ The Home View is the learner's personal space. It can be:
 - A **folder container** layout where apps group into category folders
 - A **simple search bar** with results (minimalist, no icons visible until you search)
 
-The layout is chosen by the user or the deployer. Schools may lock a
-layout; individuals may switch freely. The Home View supports **custom
-background images**, **accent colors**, and **icon size** preferences.
+The layout is always the learner's choice — no deployer or institution
+overrides it. The Home View supports **custom background images**,
+**accent colors**, and **icon size** preferences.
 
 ### 2. The four views
 
@@ -122,8 +122,7 @@ extensions:
 3. **Search-first** — no icons visible until you type. Clean slate,
    minimal distraction.
 
-Layouts are selected from Settings. Schools may lock a layout via config
-file.
+Layouts are selected from Settings, always by the learner.
 
 ## Settings panel
 

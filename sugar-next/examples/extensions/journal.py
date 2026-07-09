@@ -50,3 +50,8 @@ def _record(app_id, title, kind):
 
 def on_app_launch(app_id, app_info):
     _record(app_id, app_info.get_display_name(), "launch")
+
+
+def on_app_close(app_id, app_info):
+    title = app_info.get_display_name() if app_info else app_id
+    _record(app_id, title, "close")

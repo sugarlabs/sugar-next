@@ -30,9 +30,8 @@ those sections forward, adjusted for what Fases 1-4 actually built:
 
 **Goals:**
 - Ship a pluggable Home View with three layouts and a Settings panel to
-  switch between them, matching the archived design's sketch.
-- Give schools a config-file way to lock a layout (no UI escape hatch for
-  learners in locked deployments).
+  switch between them, matching the archived design's sketch. The Learner
+  always has full control of this choice — no deployment-level override.
 - Land XDG Base Directory compliance so config and data are where other
   Linux tooling expects them.
 - Add presence hooks and a demo P2P chat extension as an exploratory,
@@ -61,12 +60,6 @@ implement, alongside new `desktop-grid.py` and `search-first.py` modules.
 Alternative considered: three independent, unrelated shell modes selected
 at launch time — rejected because it would prevent runtime switching from
 Settings, which the proposal requires.
-
-**School lock via config file, not a protected setting.** A
-`~/.config/sugar-next/policy.conf` (or similar) read at startup can pin
-`home_view.layout` and hide the layout selector from Settings if present.
-Alternative considered: a separate "kiosk mode" binary — rejected as
-unnecessary process/packaging complexity for what is just a config read.
 
 **Collaboration: hooks and a demo, XMPP research deferred.** Add
 `on_peer_join`/`on_peer_leave` to `api/hooks.py` now, since they're cheap
@@ -118,10 +111,6 @@ for the Journal to keep working.
   small.** → Keep the interface to the minimum needed (activate/
   deactivate/root widget); don't generalize further until a third
   consumer (an extension-provided layout) actually needs it.
-- **School-lock config file could be bypassed by editing
-  `~/.config`.** → Acceptable for v0: this is a convenience default for
-  cooperative deployments, not a security boundary. Document that
-  explicitly so it isn't mistaken for one.
 - **Collaboration demo could imply more commitment than intended.** →
   Label the chat extension and its docs "exploratory" and keep it out of
   the default extension set; it ships in `examples/extensions/`, same
@@ -129,6 +118,17 @@ for the Journal to keep working.
 - **Community outreach (C.1-C.3) has no engineering rollback.** → Treat as
   a task with a real dependency on Fases above being demo-able; sequence
   it last in tasks.md.
+- **`on_app_close` PID watching relies on a GLib fallback, not a real
+  parent-child relationship.** Discovered during implementation:
+  `Gio.AppInfo.launch()` commonly reparents the launched process to the
+  user's systemd instance (transient scope/portal activation) rather than
+  forking it as our direct child. `GLib.child_watch_add()` still fires
+  because it falls back to polling `/proc` when `waitpid()` reports
+  ECHILD — reliable on Linux (Sugar Next's only target) but not the
+  textbook-correct mechanism. → Accepted for v0; a fully correct version
+  would track the systemd transient scope via `org.freedesktop.systemd1`
+  and its `JobRemoved` signal, deferred as unnecessary complexity unless
+  it proves flaky in practice.
 
 ## Migration Plan
 

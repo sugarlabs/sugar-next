@@ -42,7 +42,18 @@ Comment=A Learning Shell for Everyday Computing
 Exec=$exec_path
 Icon=org.sugarlabs.SugarNext
 Categories=System;Education;
+MimeType=application/x-sugar-next-journal;
 EOF
+
+mime_dir="${XDG_DATA_HOME:-$HOME/.local/share}/mime/packages"
+mkdir -p "$mime_dir"
+cp "$here/data/org.sugarlabs.SugarNext.mime.xml" "$mime_dir/"
+if command -v update-mime-database >/dev/null 2>&1; then
+	update-mime-database "${XDG_DATA_HOME:-$HOME/.local/share}/mime" >/dev/null 2>&1 || true
+fi
+if command -v update-desktop-database >/dev/null 2>&1; then
+	update-desktop-database "$apps_dir" >/dev/null 2>&1 || true
+fi
 
 echo "Done. Launch with 'sugar-next' or from your app menu."
 echo "Extensions go in \${XDG_DATA_HOME:-~/.local/share}/sugar-next/extensions/"

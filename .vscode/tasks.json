@@ -2,6 +2,65 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "Run Sugar Next",
+            "detail": "terminal task: launch the Sugar Next shell",
+            "type": "shell",
+            "command": "${env:HOME}/.local/share/sugar-next/venv/bin/sugar-next",
+            "options": {
+                "cwd": "${workspaceFolder}/sugar-next"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "isBackground": false,
+            "problemMatcher": []
+        },
+        {
+            "label": "Bootstrap Sugar Next",
+            "detail": "installs sugar-next into its own venv + desktop entry (sugar-next/bootstrap.sh)",
+            "type": "shell",
+            "command": "${workspaceFolder}/sugar-next/bootstrap.sh",
+            "options": {
+                "cwd": "${workspaceFolder}/sugar-next"
+            },
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Install debugpy in Sugar Next venv",
+            "detail": "required once for the 'Sugar Next' launch configs — bootstrap.sh does not install debugpy since it's only needed for VSCode debugging, not for running sugar-next itself",
+            "type": "shell",
+            "command": "${env:HOME}/.local/share/sugar-next/venv/bin/pip",
+            "args": ["install", "debugpy"],
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Test Sugar Next",
+            "detail": "pytest in sugar-next",
+            "type": "shell",
+            "command": "${env:HOME}/.local/share/sugar-next/venv/bin/python3",
+            "args": ["-m", "pytest", "tests/"],
+            "options": {
+                "cwd": "${workspaceFolder}/sugar-next",
+                "env": {
+                    "PYTHONPATH": "${workspaceFolder}/sugar-next"
+                }
+            },
+            "group": "test",
+            "problemMatcher": {
+                "owner": "python",
+                "fileLocation": "absolute",
+                "pattern": {
+                    "regexp": "^\\s+(.*):(\\d+):\\s+(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "message": 3
+                }
+            }
+        },
+        {
             "label": "Setup Sugar Workspace",
             "detail": "pip install -e on all repos in editable mode",
             "type": "shell",

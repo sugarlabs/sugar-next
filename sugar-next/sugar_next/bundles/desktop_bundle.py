@@ -6,6 +6,32 @@ from gi.repository import Gio, GLib
 from sugar_next.api.hooks import registry as hook_registry
 
 
+def _watch_for_close(app_id, app_info, pid):
+    """Fire on_app_close when *pid* exits.
+
+    Only covers apps this shell itself launched (no
+    wlr-foreign-toplevel-management support yet, so we can't observe
+    windows we didn't spawn — see the sugar-next-next design doc).
+
+    Note: Gio.AppInfo.launch() commonly reparents the launched process to
+    the user's systemd instance (transient scope / portal activation)
+    rather than forking it as our direct child, so the PID we watch is
+    not our own child on those systems. GLib.child_watch_add() still
+    fires reliably here because it falls back to polling /proc when
+    waitpid() reports ECHILD — this works on Linux (Sugar Next's only
+    target) but is not the "correct" parent-child watch mechanism. A
+    fully correct implementation would track the systemd transient scope
+    via org.freedesktop.systemd1 and watch its JobRemoved signal; that is
+    unnecessary complexity for this v0.
+    """
+
+    def _on_exit(_pid, _status):
+        hook_registry.call("on_app_close", app_id, app_info)
+        GLib.spawn_close_pid(_pid)
+
+    GLib.child_watch_add(GLib.PRIORITY_DEFAULT, pid, _on_exit)
+
+
 class DesktopBundle:
     def __init__(self, app_info):
         self.app_info = app_info
@@ -29,10 +55,24 @@ class DesktopBundle:
             return icon
         return None
 
+    @property
+    def category(self):
+        """First XDG category from the .desktop file, if any."""
+        categories = self.app_info.get_categories()
+        if not categories:
+            return None
+        return categories.split(";")[0] or None
+
     def launch(self):
         hook_registry.call("on_app_launch", self.app_id, self.app_info)
         launch_context = Gio.AppLaunchContext()
+        launch_context.connect("launched", self._on_launched)
         return self.app_info.launch(None, launch_context)
+
+    def _on_launched(self, context, app_info, platform_data):
+        pid = dict(platform_data).get("pid") if platform_data else None
+        if pid is not None:
+            _watch_for_close(self.app_id, self.app_info, pid)
 
     @staticmethod
     def iter_apps():

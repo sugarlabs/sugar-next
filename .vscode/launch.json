@@ -2,6 +2,30 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Sugar Next",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "sugar_next.shell.main",
+            "python": "/home/icarito/.local/share/sugar-next/venv/bin/python3",
+            "cwd": "${workspaceFolder}/sugar-next",
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "Sugar Next (editable src)",
+            "detail": "runs against sugar-next/sugar_next in-place, for active development",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "sugar_next.shell.main",
+            "python": "/home/icarito/.local/share/sugar-next/venv/bin/python3",
+            "cwd": "${workspaceFolder}/sugar-next",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/sugar-next"
+            },
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
             "name": "Sugar Jarabe (windowed)",
             "type": "debugpy",
             "request": "launch",

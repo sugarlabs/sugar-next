@@ -49,15 +49,6 @@ Home View layout, and extension management controls.
 - **WHEN** the learner picks a new accent color in Settings
 - **THEN** the shell chrome updates to use that color without restarting
 
-### Requirement: School-locked Home View layout
-The shell SHALL support locking the Home View layout via a configuration
-file, hiding the layout selector from Settings when a lock is present.
-
-#### Scenario: Locked deployment
-- **WHEN** a policy config file specifies a fixed `home_view.layout`
-- **THEN** the shell starts with that layout and the layout selector is
-  not shown in Settings
-
 ### Requirement: Color token system
 The shell SHALL define its chrome colors as `--sn-*` CSS custom
 properties set from the system `prefers-color-scheme`, and SHALL allow
