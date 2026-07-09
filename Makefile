@@ -44,12 +44,14 @@ run: build-casilda build-toolkit-gtk4
 	GI_TYPELIB_PATH="$${HOME}/.local/usr/local/lib/girepository-1.0:$${HOME}/.local/lib/girepository-1.0:/usr/lib/girepository-1.0:/usr/lib/x86_64-linux-gnu/girepository-1.0" \
 	LD_LIBRARY_PATH="$${HOME}/.local/usr/local/lib:$${HOME}/.local/lib:/usr/lib/x86_64-linux-gnu" \
 	PYTHONPATH="$(CURDIR)/$(SUGAR_DIR)/src:$(CURDIR)/$(TOOLKIT_GTK4_DIR)/src:$$PYTHONPATH" \
+	PATH="$(CURDIR)/$(TOOLKIT_GTK4_DIR)/.venv/bin:$$PATH" \
 	$(PYTHON) $(SUGAR_DIR)/src/jarabe/main.py
 
 debug: build-casilda build-toolkit-gtk4
 	@echo "=== Launching Sugar shell with debugpy on port $(DEBUG_PORT) ==="
 	SUGAR_NO_FULLSCREEN=1 \
 	PYTHONPATH="$(CURDIR)/$(SUGAR_DIR)/src:$(CURDIR)/$(TOOLKIT_GTK4_DIR)/src:$$PYTHONPATH" \
+	PATH="$(CURDIR)/$(TOOLKIT_GTK4_DIR)/.venv/bin:$$PATH" \
 	$(PYTHON) -m debugpy --listen 0.0.0.0:$(DEBUG_PORT) --wait-for-client \
 	-c "\
 import gi; \

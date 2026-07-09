@@ -16,7 +16,8 @@
                 "GSETTINGS_SCHEMA_DIR": "${env:HOME}/.local/share/glib-2.0/schemas",
                 "PYTHONPATH": "${workspaceFolder}/repos/sugar-toolkit-gtk4/src:${workspaceFolder}/repos/sugar/src",
                 "GI_TYPELIB_PATH": "${env:HOME}/.local/usr/local/lib/girepository-1.0:${env:HOME}/.local/lib/girepository-1.0:/usr/lib/girepository-1.0:/usr/lib/x86_64-linux-gnu/girepository-1.0",
-                "LD_LIBRARY_PATH": "${env:HOME}/.local/usr/local/lib:${env:HOME}/.local/lib:/usr/lib/x86_64-linux-gnu"
+                "LD_LIBRARY_PATH": "${env:HOME}/.local/usr/local/lib:${env:HOME}/.local/lib:/usr/lib/x86_64-linux-gnu",
+                "PATH": "${workspaceFolder}/repos/sugar-toolkit-gtk4/.venv/bin:${env:PATH}"
             },
             "console": "externalTerminal",
             "justMyCode": false
@@ -36,7 +37,8 @@
                 "GSETTINGS_SCHEMA_DIR": "${env:HOME}/.local/share/glib-2.0/schemas",
                 "PYTHONPATH": "${workspaceFolder}/repos/sugar-toolkit-gtk4/src:${workspaceFolder}/repos/sugar/src",
                 "GI_TYPELIB_PATH": "${env:HOME}/.local/usr/local/lib/girepository-1.0:${env:HOME}/.local/lib/girepository-1.0:/usr/lib/girepository-1.0:/usr/lib/x86_64-linux-gnu/girepository-1.0",
-                "LD_LIBRARY_PATH": "${env:HOME}/.local/usr/local/lib:${env:HOME}/.local/lib:/usr/lib/x86_64-linux-gnu"
+                "LD_LIBRARY_PATH": "${env:HOME}/.local/usr/local/lib:${env:HOME}/.local/lib:/usr/lib/x86_64-linux-gnu",
+                "PATH": "${workspaceFolder}/repos/sugar-toolkit-gtk4/.venv/bin:${env:PATH}"
             },
             "console": "externalTerminal",
             "justMyCode": false
@@ -55,7 +57,8 @@
                 "GSETTINGS_SCHEMA_DIR": "${env:HOME}/.local/share/glib-2.0/schemas",
                 "PYTHONPATH": "${workspaceFolder}/repos/sugar-toolkit-gtk4/src:${workspaceFolder}/repos/sugar/src",
                 "GI_TYPELIB_PATH": "${env:HOME}/.local/usr/local/lib/girepository-1.0:${env:HOME}/.local/lib/girepository-1.0:/usr/lib/girepository-1.0:/usr/lib/x86_64-linux-gnu/girepository-1.0",
-                "LD_LIBRARY_PATH": "${env:HOME}/.local/usr/local/lib:${env:HOME}/.local/lib:/usr/lib/x86_64-linux-gnu"
+                "LD_LIBRARY_PATH": "${env:HOME}/.local/usr/local/lib:${env:HOME}/.local/lib:/usr/lib/x86_64-linux-gnu",
+                "PATH": "${workspaceFolder}/repos/sugar-toolkit-gtk4/.venv/bin:${env:PATH}"
             },
             "console": "externalTerminal",
             "justMyCode": false
@@ -108,7 +111,8 @@
                 "GSETTINGS_SCHEMA_DIR": "${env:HOME}/.local/share/glib-2.0/schemas",
                 "PYTHONPATH": "${workspaceFolder}/repos/sugar-toolkit-gtk4/src:${workspaceFolder}/repos/sugar/src",
                 "GI_TYPELIB_PATH": "${env:HOME}/.local/usr/local/lib/girepository-1.0:${env:HOME}/.local/lib/girepository-1.0:/usr/lib/girepository-1.0:/usr/lib/x86_64-linux-gnu/girepository-1.0",
-                "LD_LIBRARY_PATH": "${env:HOME}/.local/usr/local/lib:${env:HOME}/.local/lib:/usr/lib/x86_64-linux-gnu"
+                "LD_LIBRARY_PATH": "${env:HOME}/.local/usr/local/lib:${env:HOME}/.local/lib:/usr/lib/x86_64-linux-gnu",
+                "PATH": "${workspaceFolder}/repos/sugar-toolkit-gtk4/.venv/bin:${env:PATH}"
             },
             "console": "externalTerminal",
             "justMyCode": false
