@@ -94,13 +94,17 @@ cd sugar-next
 podman build -t sugar-next -f Containerfile .
 podman run --rm \
   -e WAYLAND_DISPLAY -e XDG_RUNTIME_DIR \
+  --mount "type=tmpfs,dst=$XDG_RUNTIME_DIR,tmpfs-mode=0700,U=true" \
   -v "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY:$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY" \
+  --device /dev/dri \
   --userns=keep-id \
   sugar-next
 ```
 
 The container shares your host Wayland compositor socket — the shell
-opens as a regular window.
+opens as a regular window. The tmpfs gives dconf a writable
+`XDG_RUNTIME_DIR` (only the socket is shared from the host), and
+`--device /dev/dri` enables GPU rendering.
 
 > **Troubleshooting:** if the build fails with `pasta failed ...
 > /dev/net/tun: No such device`, rootless networking is unavailable —

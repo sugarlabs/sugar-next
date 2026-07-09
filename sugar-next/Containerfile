@@ -11,7 +11,9 @@
 # Run (Wayland; shares the host compositor socket):
 #   podman run --rm \
 #     -e WAYLAND_DISPLAY -e XDG_RUNTIME_DIR \
+#     --mount "type=tmpfs,dst=$XDG_RUNTIME_DIR,tmpfs-mode=0700,U=true" \
 #     -v "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY:$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY" \
+#     --device /dev/dri \
 #     --userns=keep-id \
 #     sugar-next
 
@@ -19,7 +21,8 @@ FROM registry.fedoraproject.org/fedora-minimal:42
 
 RUN microdnf install -y \
         python3 python3-pip python3-gobject gtk4 \
-        adwaita-icon-theme \
+        adwaita-icon-theme dejavu-sans-fonts \
+        libglvnd-gles mesa-libEGL mesa-dri-drivers \
     && microdnf clean all
 
 WORKDIR /opt/sugar-next
@@ -27,5 +30,10 @@ COPY pyproject.toml ./
 COPY sugar_next ./sugar_next
 COPY examples ./examples
 RUN pip install --no-cache-dir .
+
+# The container runs as the host user (--userns=keep-id); give
+# fontconfig/GTK/Mesa caches a writable home. Set after the pip step so
+# root doesn't pre-create /tmp/.cache with root ownership.
+ENV HOME=/tmp
 
 CMD ["sugar-next"]
