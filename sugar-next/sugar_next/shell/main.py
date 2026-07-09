@@ -21,7 +21,7 @@ class SugarShell(Gtk.Application):
         hook_registry.call("on_shell_start")
         self.window = Gtk.ApplicationWindow(
             application=app,
-            title="Sugar Next",
+            title="Sugar Next — A Learning Shell for Everyday Computing",
             default_width=1024,
             default_height=768,
         )

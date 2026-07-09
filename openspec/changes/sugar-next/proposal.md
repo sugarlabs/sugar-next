@@ -1,4 +1,4 @@
-# Sugar Next — Modern pipeline for Sugar Labs
+# Sugar Next — A Learning Shell for Everyday Computing
 
 ## Problem
 

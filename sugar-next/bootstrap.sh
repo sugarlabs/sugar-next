@@ -20,7 +20,7 @@ cat > "$apps_dir/org.sugarlabs.SugarNext.desktop" <<EOF
 [Desktop Entry]
 Type=Application
 Name=Sugar Next
-Comment=Modern shell for Sugar Labs
+Comment=A Learning Shell for Everyday Computing
 Exec=sugar-next
 Icon=org.sugarlabs.SugarNext
 Categories=System;Education;

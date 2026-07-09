@@ -1,6 +1,6 @@
-# Sugar Next
+# Sugar Next — A Learning Shell for Everyday Computing
 
-A modern, self-contained shell in the spirit of Sugar: GTK4 + Python,
+GTK4 + Python,
 running as a normal Wayland client on any current Linux distribution.
 
 **Sugar Next is not a fork and not a replacement.** It is a sibling
@@ -48,7 +48,7 @@ maintaining it.
 ### What Sugar Next deliberately does not do
 
 - Touch the `sugar` repo, jarabe, or PR #1019 — the legacy shell stays
-  exactly as it is.
+   exactly as it is.
 - Migrate existing XO activities to a new API (a compat layer may come
   later).
 - Reimplement legacy mesh collaboration.
