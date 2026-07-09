@@ -5,9 +5,7 @@
 - [x] 1.1 Design `HomeViewLayout` interface (activate/deactivate/root widget)
 - [x] 1.2 Adapt `shell/app-grid.py` to implement the layout interface
 - [x] 1.3 Implement `shell/desktop-grid.py` (background image, floating
-      icons, container folders that expand into sub-grids) — implemented
-      and tested, but **parked out of the active Home View** in `main.py`
-      (confusing UX as shipped); code stays for later rework, not deleted.
+      icons, container folders that expand into sub-grids)
 - [x] 1.4 Implement `shell/search-first.py` (blank canvas + search bar)
 - [x] 1.5 Wire layout switching at runtime (no restart required)
 - [x] 1.6 Smoke test: switch between all three layouts, confirm state
@@ -53,11 +51,10 @@
       (possibly integrating with Gajim); still needs a proper design
       writeup (transport, library choice — e.g. slixmpp — link-local vs.
       federated).
-- [ ] 6.3 ~~Write demo P2P chat extension~~ — a UDP-broadcast prototype
+- [ ] 6.3 Write demo P2P chat extension — a UDP-broadcast prototype
       was built to validate the on_peer_join/on_peer_leave hook shape,
-      then explicitly rejected as out-of-scope (see
-      `examples/extensions/peer-chat.py`, kept only as a reference
-      example, not installed). Real extension is XMPP-based, not started.
+      then explicitly rejected as out-of-scope. Real extension is
+      XMPP-based, not started.
 - [ ] 6.4 Document the collaboration design (presence bus + share
       substrate) for future phases in `specbook/docs/`
 - [ ] 6.5 Smoke test: two instances on the same LAN discover each other
@@ -78,38 +75,42 @@
 - [ ] 8.2 Post to IAEP with educational framing
 - [ ] 8.3 Reach out to Walter Bender for feedback
 
-## 9. Documentation
+## 9. Extension contract and language backends
 
-- [ ] 9.1 Document the "Groups" view (activities as temporal, sharable
+- [x] 9.1 Document full extension contract in
+      `specs/extensions/contract.md` — all 5 hooks, signatures, lifecycle,
+      enable/disable, error isolation, best practices
+- [ ] 9.2 Implement gjs backend: spawn `gjs` as subprocess, pass hook
+      events as JSON on stdin, collect results from stdout
+- [ ] 9.3 Implement generic subprocess backend: any executable in
+      `extensions/` (not just `.py`) is spawned and communicated with via
+      the JSON/stdio protocol
+- [ ] 9.4 Add `on_app_launch` return-value contract: if a hook returns
+      `{"cancel": true}`, the launch is blocked (opt-in, backward-compatible)
+- [ ] 9.5 Document the subprocess JSON/stdio protocol in `contract.md`
+- [ ] 9.6 Write example JS extension (gjs) that logs launches
+- [ ] 9.7 Smoke test: Python, gjs, and subprocess extensions all load and
+      fire hooks correctly
+
+## 10. Documentation
+
+- [ ] 10.1 Document the "Groups" view (activities as temporal, sharable
       workspaces spanning multiple apps) as explicit future work in
       `sugar-next/HIG.md` or `specbook/docs/`, gated on the extension API
       proving itself first
 
-## 10. Frame: only show apps with real windows (not out of scope originally —
-       added mid-implementation per user feedback: "el shell debería hacer
-       como GNOME y mostrar solo lo activo")
+## 11. Frame: universal window listing
 
-- [x] 10.1 Add `wlr-foreign-toplevel-management` client via `pywayland`,
+- [x] 11.1 Add `wlr-foreign-toplevel-management` client via `pywayland`,
       gated behind protocol-availability detection (GNOME/Mutter does not
-      implement this protocol at all — only wlroots-based compositors
-      like Wayfire/Sway do; confirmed via `wayland-info` in this dev
-      environment, which shows zero `zwlr_*` interfaces). Implemented in
-      `shell/toplevel_tracker.py`; protocol bindings hand-generated via
-      `pywayland.scanner` from the upstream wlr-protocols XML and vendored
-      in `sugar_next/_wayland_wlr/` (pywayland does not ship wlr-* bindings
-      out of the box, only the newer `ext_foreign_toplevel_list_v1`
-      standard, which GNOME/Mutter also does not implement). `pywayland`
-      added as an optional dependency (`wayland-toplevels` extra).
-- [x] 10.2 Wire toplevel create/close/title events into the Frame's
-      running-apps list — `main.py`'s `_on_toplevel_close` removes an app
-      once its last tracked window closes, only active when
-      `toplevel_tracker.available is True`.
-- [x] 10.3 Fallback to current behavior (session-launched apps only, via
-      `on_app_close`) when the protocol is unavailable — `main.py`'s
-      `_on_app_process_closed` only acts when the tracker reports
-      `available is not True`, so exactly one path is live at a time.
-      Verified in this dev environment (GNOME/Mutter, tracker reports
-      unavailable): shell starts cleanly, no crash, no exceptions.
-- [ ] 10.4 Verify against a real Wayfire session (this repo's dev
-      environment is GNOME/Mutter and cannot exercise the wlroots path;
-      see `wayland-compositor-dev` skill for setting up nested Wayfire)
+      implement this protocol — only wlroots compositors like Wayfire/Sway
+      do). Implemented in `shell/toplevel_tracker.py`; protocol bindings
+      hand-generated via `pywayland.scanner` from the upstream
+      wlr-protocols XML and vendored in `sugar_next/_wayland_wlr/`.
+      `pywayland` added as an optional dependency (`wayland-toplevels` extra).
+- [x] 11.2 Wire toplevel create/close/title events into the Frame's
+      running-apps list.
+- [x] 11.3 Fallback to current behavior (session-launched apps only, via
+      `on_app_close`) when the protocol is unavailable.
+- [ ] 11.4 Verify against a real Wayfire session (this dev environment is
+      GNOME/Mutter and cannot exercise the wlroots path).
