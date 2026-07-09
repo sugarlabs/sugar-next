@@ -77,18 +77,27 @@ class SugarAppGrid(Gtk.Box, HomeViewLayout):
 
     _CSS = """
         .app-grid-cell {
-            border-radius: 12px;
-            padding: 8px;
-            transition: background-color 150ms ease;
+            border-radius: 14px;
+            padding: 10px;
+            background: none;
+            border: none;
+            box-shadow: none;
+            transition: all 150ms ease;
         }
         .app-grid-cell:hover {
-            background-color: alpha(@theme_fg_color, 0.08);
+            background: linear-gradient(180deg,
+                rgba(128,128,128,0.10) 0%,
+                rgba(128,128,128,0.04) 100%
+            );
         }
         .app-grid-cell:active {
-            background-color: alpha(@theme_fg_color, 0.15);
+            background: linear-gradient(180deg,
+                rgba(128,128,128,0.15) 0%,
+                rgba(128,128,128,0.08) 100%
+            );
         }
-        .app-grid-label {
-            color: @theme_fg_color;
+        .app-grid-cell label {
+            color: var(--sn-text);
             font-size: 11pt;
         }
     """

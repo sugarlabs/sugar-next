@@ -15,6 +15,7 @@ _DEFAULTS = {
     "contrast": "normal",  # "normal" | "high"
     "icon_size": "medium",  # "small" | "medium" | "large"
     "home_view_layout": "app-grid",
+    "bg_dim": 0.25,  # 0.0–1.0 — dark overlay over background for label contrast
 }
 
 _ICON_SIZES = {"small": 32, "medium": 48, "large": 64}

@@ -43,7 +43,65 @@ class SugarShell(Gtk.Application):
 
         base_css = Gtk.CssProvider()
         base_css.load_from_string(
-            "window { background-color: var(--sn-bg); color: var(--sn-text); }"
+            """
+            window {
+                background-color: var(--sn-bg);
+                color: var(--sn-text);
+            }
+            button {
+                border-radius: 10px;
+                box-shadow: 0 1px 0 rgba(255,255,255,0.12);
+            }
+            button:hover {
+                box-shadow: 0 1px 0 rgba(255,255,255,0.18),
+                            0 2px 6px rgba(0,0,0,0.12);
+            }
+            searchbar, entry {
+                border-radius: 12px;
+                border: 1px solid rgba(0,0,0,0.1);
+                background: linear-gradient(180deg,
+                    rgba(0,0,0,0.03) 0%,
+                    rgba(0,0,0,0.01) 100%
+                );
+                box-shadow:
+                    inset 0 1px 2px rgba(0,0,0,0.06),
+                    0 1px 0 rgba(255,255,255,0.08);
+            }
+            .sn-dropdown {
+                border: none;
+                box-shadow: none;
+                background: none;
+                margin: 0;
+                padding: 0 4px;
+                min-height: 28px;
+            }
+            .sn-dropdown > button {
+                border-radius: 8px;
+                border: 1px solid rgba(0,0,0,0.12);
+                background: linear-gradient(180deg,
+                    rgba(255,255,255,0.08) 0%,
+                    rgba(0,0,0,0.02) 100%
+                );
+                box-shadow: 0 1px 0 rgba(255,255,255,0.08);
+                padding: 2px 10px;
+            }
+            .sn-dropdown > button:hover {
+                border-color: rgba(0,0,0,0.20);
+            }
+            .sn-dropdown > popover {
+                border-radius: 10px;
+                border: 1px solid rgba(0,0,0,0.12);
+                box-shadow: 0 3px 12px rgba(0,0,0,0.18);
+                padding: 4px 0;
+            }
+            .sn-dropdown > popover contents > row {
+                padding: 4px 12px;
+            }
+            .sn-dropdown > popover contents > row:hover {
+                background: var(--sn-accent);
+                color: white;
+            }
+            """
         )
         Gtk.StyleContext.add_provider_for_display(
             self.window.get_display(),
@@ -98,40 +156,61 @@ class SugarShell(Gtk.Application):
             self._background_picture.set_filename(bg_path)
         self._background_picture.add_css_class("home-view-bg")
 
-        bg_css = Gtk.CssProvider()
-        bg_css.load_from_string(
-            """GtkPicture.home-view-bg { opacity: 0.4; }"""
-        )
-        Gtk.StyleContext.add_provider_for_display(
-            self.window.get_display(),
-            bg_css,
-            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
-        )
+        self._bg_overlay = Gtk.DrawingArea()
+        self._bg_overlay.set_hexpand(True)
+        self._bg_overlay.set_vexpand(True)
+        self._bg_overlay.add_css_class("home-view-bg-overlay")
+        self._bg_overlay.set_draw_func(self._draw_bg_overlay)
+
+        bg_dim = self.settings_store.get("bg_dim")
+        self._bg_overlay.set_opacity(bg_dim)
 
         home_overlay = Gtk.Overlay()
         home_overlay.set_child(self._background_picture)
+        home_overlay.add_overlay(self._bg_overlay)
         home_overlay.add_overlay(self.home_view)
 
         shell_overlay = Gtk.Overlay()
         shell_overlay.set_child(home_overlay)
         shell_overlay.add_overlay(self.frame)
         self.window.set_child(shell_overlay)
+        shell_overlay._frame = self.frame
+
+        # Hot corner click target at top-right — click opens Frame.
+        self._hot_corner = Gtk.Button()
+        self._hot_corner.add_css_class("flat")
+        self._hot_corner.set_opacity(0.0)
+        self._hot_corner.set_size_request(80, 6)
+        self._hot_corner.set_halign(Gtk.Align.END)
+        self._hot_corner.set_valign(Gtk.Align.START)
+        self._hot_corner.set_tooltip_text("Click or hover to reveal the Frame")
+        self._hot_corner.connect("clicked", lambda _b: self.frame.reveal())
+        shell_overlay.add_overlay(self._hot_corner)
+
+        # Click outside the Frame closes it.
+        close_gesture = Gtk.GestureClick()
+        close_gesture.connect("pressed", self._on_background_pressed)
+        home_overlay.add_controller(close_gesture)
+        shell_overlay.add_overlay(self._hot_corner)
 
         self.settings_panel = SettingsPanel(
             home_view=self.home_view, store=self.settings_store, shell=self
         )
-        self.settings_panel.set_parent(self.frame.settings_button)
         self.frame.set_settings_panel(self.settings_panel)
 
         key_controller = Gtk.EventControllerKey()
         key_controller.connect("key-pressed", self._on_key_pressed)
         self.window.add_controller(key_controller)
 
+        # Motion on the hot corner itself (keeping the old behavior).
         motion = Gtk.EventControllerMotion()
         motion.connect("motion", self._on_motion)
-        self.window.add_controller(motion)
+        self._hot_corner.add_controller(motion)
 
         self.window.present()
+
+    def _on_background_pressed(self, gesture, n_press, x, y):
+        self.frame.set_reveal_child(False)
 
     def _on_key_pressed(self, controller, keyval, keycode, state):
         if keyval == Gdk.KEY_F6:
@@ -147,7 +226,7 @@ class SugarShell(Gtk.Application):
         return False
 
     def _on_motion(self, controller, x, y):
-        if y <= 2 and x >= self.window.get_width() - 2:
+        if y <= 3:
             self.frame.reveal()
 
     def _on_shutdown(self, app):
@@ -160,11 +239,18 @@ class SugarShell(Gtk.Application):
         color = dominant_color_hex(bundle.icon)
         theme_manager.set_accent_tint(color)
 
+    def _draw_bg_overlay(self, area, cr, width, height):
+        cr.set_source_rgba(0, 0, 0, 1.0)
+        cr.paint()
+
     def set_background(self, path):
         if path:
             self._background_picture.set_filename(path)
         else:
             self._background_picture.set_filename(None)
+
+    def set_bg_dim(self, value):
+        self._bg_overlay.set_opacity(value)
 
     def _on_toplevel_open(self, wayland_app_id, title):
         pass

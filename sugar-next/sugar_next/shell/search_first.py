@@ -16,6 +16,7 @@ from sugar_next.shell.home_view import HomeViewLayout
 class _ResultRow(Gtk.Box):
     def __init__(self, bundle, on_activate, icon_size=32):
         super().__init__(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+        self.add_css_class("search-result-row")
         self.bundle = bundle
         self.set_margin_start(8)
         self.set_margin_end(8)
@@ -47,11 +48,49 @@ class SugarSearchFirst(Gtk.Box, HomeViewLayout):
     layout_id = "search-first"
     layout_name = "Search First"
 
+    _CSS = """
+        .search-result-row {
+            border-radius: 10px;
+            padding: 6px 8px;
+            background: linear-gradient(180deg,
+                var(--sn-surface) 0%,
+                var(--sn-bg) 100%
+            );
+            border: 1px solid rgba(0,0,0,0.08);
+            box-shadow:
+                0 1px 0 rgba(255,255,255,0.10),
+                0 2px 4px rgba(0,0,0,0.08);
+            transition: all 150ms ease;
+        }
+        .search-result-row:hover {
+            background: linear-gradient(180deg,
+                var(--sn-accent) 0%,
+                rgba(0,0,0,0.06) 100%
+            );
+            border-color: rgba(0,0,0,0.15);
+            box-shadow:
+                0 1px 0 rgba(255,255,255,0.15),
+                0 3px 8px rgba(0,0,0,0.15);
+        }
+        .search-result-row label {
+            color: var(--sn-text);
+            text-shadow: 0 1px 0 rgba(255,255,255,0.12);
+        }
+    """
+
     def __init__(self, on_launched=None, icon_size=32):
         super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         self._on_launched = on_launched
         self._all_bundles = []
         self._icon_size = icon_size
+
+        provider = Gtk.CssProvider()
+        provider.load_from_string(self._CSS)
+        Gtk.StyleContext.add_provider_for_display(
+            Gdk.Display.get_default(),
+            provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
+        )
 
         self.set_valign(Gtk.Align.CENTER)
 

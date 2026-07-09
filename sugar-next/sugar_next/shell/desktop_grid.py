@@ -48,15 +48,34 @@ class SugarDesktopGrid(Gtk.Overlay, HomeViewLayout):
     layout_name = "Desktop Grid"
 
     _CSS = """
+        .desktop-grid-cell {
+            border-radius: 14px;
+            padding: 10px;
+            background: none;
+            border: none;
+            box-shadow: none;
+            transition: all 150ms ease;
+            min-width: 100px;
+        }
+        .desktop-grid-cell:hover {
+            background: rgba(255,255,255,0.12);
+        }
+        .desktop-grid-cell:active {
+            background: rgba(0,0,0,0.15);
+        }
         .desktop-grid-cell label {
             color: white;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+            text-shadow: 0 1px 3px rgba(0,0,0,0.7);
             font-size: 10pt;
         }
         .desktop-grid-background {
             background-color: var(--sn-bg);
             background-size: cover;
             background-position: center;
+        }
+        .desktop-grid-folder label {
+            color: #e0e0e0;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.7);
         }
     """
 
@@ -81,6 +100,8 @@ class SugarDesktopGrid(Gtk.Overlay, HomeViewLayout):
 
         self._stack = Gtk.Stack()
         self._stack.set_transition_type(Gtk.StackTransitionType.SLIDE_LEFT_RIGHT)
+        self._stack.set_vexpand(True)
+        self._stack.set_hexpand(True)
         self.add_overlay(self._stack)
 
         self._root_flow = self._make_flow_box()
@@ -105,8 +126,10 @@ class SugarDesktopGrid(Gtk.Overlay, HomeViewLayout):
     def _make_flow_box(self):
         scrolled = Gtk.ScrolledWindow()
         scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scrolled.set_vexpand(True)
         flow_box = Gtk.FlowBox()
-        flow_box.set_valign(Gtk.Align.START)
+        flow_box.set_valign(Gtk.Align.FILL)
+        flow_box.set_halign(Gtk.Align.FILL)
         flow_box.set_max_children_per_line(10)
         flow_box.set_selection_mode(Gtk.SelectionMode.NONE)
         flow_box.set_margin_start(24)
@@ -157,6 +180,7 @@ class SugarDesktopGrid(Gtk.Overlay, HomeViewLayout):
         cell = _IconCell(
             image, category, lambda: self._open_folder(category, members)
         )
+        cell.add_css_class("desktop-grid-folder")
         self._root_flow.flow_box.append(cell)
 
     def _open_folder(self, category, members):

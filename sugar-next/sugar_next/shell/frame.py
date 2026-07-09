@@ -87,11 +87,31 @@ class SugarFrame(Gtk.Revealer):
             """
             .frame-bar {
                 background-color: var(--sn-bg-alt);
-                border-top: 2px solid var(--sn-accent);
-                border-radius: 0 0 12px 12px;
+                background: linear-gradient(180deg,
+                    var(--sn-surface) 0%,
+                    var(--sn-bg-alt) 3px,
+                    var(--sn-bg-alt) 100%
+                );
+                border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+                border-radius: 0 0 14px 14px;
                 padding: 8px 16px;
                 min-height: 48px;
-                transition: border-color 400ms ease;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+            }
+            .frame-bar button {
+                border-radius: 8px;
+                border: 1px solid rgba(0, 0, 0, 0.1);
+                background: linear-gradient(180deg,
+                    rgba(255,255,255,0.12) 0%,
+                    rgba(0,0,0,0.04) 100%
+                );
+                box-shadow: 0 1px 0 rgba(255,255,255,0.15);
+            }
+            .frame-bar button:hover {
+                background: linear-gradient(180deg,
+                    var(--sn-accent) 0%,
+                    rgba(0,0,0,0.08) 100%
+                );
             }
             """
         )
@@ -115,11 +135,15 @@ class SugarFrame(Gtk.Revealer):
         )
         bar.append(self._running_box)
 
-        self._settings_button = Gtk.MenuButton()
+        self._settings_button = Gtk.Button()
         self._settings_button.add_css_class("flat")
         self._settings_button.set_icon_name("emblem-system-symbolic")
+        self._settings_button.set_has_frame(False)
         self._settings_button.set_hexpand(True)
         self._settings_button.set_halign(Gtk.Align.END)
+        icon = Gtk.Image.new_from_icon_name("emblem-system-symbolic")
+        icon.set_pixel_size(20)
+        self._settings_button.set_child(icon)
         bar.append(self._settings_button)
 
         self._favorite_ids = self._load_favorites()
@@ -130,8 +154,11 @@ class SugarFrame(Gtk.Revealer):
     def settings_button(self):
         return self._settings_button
 
-    def set_settings_panel(self, popover):
-        self._settings_button.set_popover(popover)
+    def set_settings_panel(self, settings_window):
+        self._settings_panel = settings_window
+        self._settings_button.connect(
+            "clicked", lambda _b: settings_window.popup()
+        )
 
     def toggle(self):
         self.set_reveal_child(not self.get_reveal_child())
