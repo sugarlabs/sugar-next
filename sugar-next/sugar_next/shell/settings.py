@@ -531,7 +531,8 @@ class SettingsWindow(Gtk.Window):
         return box
 
 
-# Compatibility alias so frame.py can call set_settings_panel.
+# Compatibility alias providing popup()/popdown()/is_visible() so callers
+# (main.py, the pie menu's center button) can treat Settings uniformly.
 class SettingsPanel(SettingsWindow):
     def __init__(self, home_view=None, store=None, shell=None):
         super().__init__(home_view=home_view, store=store, shell=shell)

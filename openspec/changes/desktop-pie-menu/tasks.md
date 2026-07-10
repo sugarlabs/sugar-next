@@ -43,12 +43,25 @@
 
 ## 6. Cleanup
 
-- [ ] 6.1 Smoke test: navigate Desktop → Apps → Frame → Desktop
-- [ ] 6.2 Smoke test: pin app in Apps view, verify it appears in pie menu
-- [ ] 6.3 Smoke test: unpin from pie menu, verify it disappears
-- [ ] 6.4 Smoke test: open Settings from pie menu center
+- [x] 6.1 Smoke test: navigate Desktop → Apps → Frame → Desktop — ran the
+      shell headless against a real Wayland display, switched
+      desktop-grid → app-grid → desktop-grid via `_activate_view`
+- [x] 6.2 Smoke test: pin app in Apps view, verify it appears in pie menu —
+      pinned a real installed app, verified petal count and empty-state
+      visibility
+- [x] 6.3 Smoke test: unpin from pie menu, verify it disappears — verified
+      petal removed and empty state restored
+- [x] 6.4 Smoke test: open Settings from pie menu center —
+      `_on_settings_requested` opens `settings_panel`, verified visible
 - [x] 6.5 Remove `home_view.py` if no longer needed — kept: `HomeView`
       still owns the crossfade transition between Desktop/Apps and backs
       `view_ids()`/`get_view()`/`active_id`, which `settings.py` (icon
       size, background) and `main.py` (F1/F2, persistence) depend on
-- [ ] 6.6 Update tests
+- [x] 6.6 Update tests — removed `test_pin_persists_and_reloads` from
+      `test_frame.py` (favorites moved out of Frame), added
+      `tests/test_pie_menu.py` covering pin/unpin/persist/empty-state/
+      settings callback; updated `test_home_view.py`,
+      `test_settings_panel.py`, `test_frame.py`, `test_xdg_compliance.py`,
+      `test_settings_store.py` for the `SugarSearchFirst` →
+      `SugarPieMenu` swap and the `home_view_layout` default fix.
+      64/64 tests pass.
