@@ -103,7 +103,7 @@ def test_remove_running_unknown_app_is_a_no_op(tmp_path, monkeypatch):
     assert _running_box_count(frame) == 1
 
 
-def test_view_switcher_selects_and_persists(tmp_path, monkeypatch):
+def test_view_switcher_selects_and_closes_frame(tmp_path, monkeypatch):
     monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
     frame = SugarFrame()
     chosen = []
