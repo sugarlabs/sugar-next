@@ -17,9 +17,10 @@ local project_dir = os.getenv("SUGAR_NEXT_PROJECT_DIR") or os.getenv("PWD") or "
 local python = os.getenv("SUGAR_NEXT_PYTHON") or "python3"
 local nested_size = os.getenv("SUGAR_NEXT_NESTED_SIZE") or "1024x640"
 local nested_scale = os.getenv("SUGAR_NEXT_NESTED_SCALE") or "1"
+local enable_layer_shell = os.getenv("SUGAR_NEXT_LAYER_SHELL") == "1"
 local layer_shell_preload = os.getenv("SUGAR_NEXT_LAYER_SHELL_PRELOAD")
 local env_prefix = ""
-if layer_shell_preload and layer_shell_preload ~= "" then
+if enable_layer_shell and layer_shell_preload and layer_shell_preload ~= "" then
     env_prefix = "LD_PRELOAD=" .. shquote(layer_shell_preload) .. " "
 end
 

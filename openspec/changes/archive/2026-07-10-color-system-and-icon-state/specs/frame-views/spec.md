@@ -1,6 +1,6 @@
 ## MODIFIED Requirements
 
-### Requirement: Frame shows running windows AND view switcher
+### Requirement: Views accessible from the Frame
 
 The shell SHALL provide two views — Desktop, Apps — accessible from the
 Frame (overlay bar at screen bottom / F6), NOT from Settings. The Frame

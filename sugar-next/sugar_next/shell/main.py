@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
+import cairo
 import sys
 import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Gdk", "4.0")
-from gi.repository import Gdk, Gtk, GLib
+gi.require_version("GdkPixbuf", "2.0")
+from gi.repository import Gdk, GdkPixbuf, Gtk, GLib
 
 from sugar_next.api.hooks import registry as hook_registry
 from sugar_next.shell.app_state import registry as app_state, normalize_app_id
@@ -203,6 +205,7 @@ class SugarShell(Gtk.Application):
         bg_path = self.settings_store.get("background_path")
         if bg_path:
             self._background_picture.set_filename(bg_path)
+            self._bg_grey_pixbuf = self._build_grey_pixbuf(bg_path)
         self._background_picture.add_css_class("home-view-bg")
 
         # Background adjustment overlay. A single flat wash drawn over the
@@ -212,6 +215,9 @@ class SugarShell(Gtk.Application):
         #   contrast:    0.0 (none)  .. 1.0 (flat mid-grey veil)
         self._bg_brightness = float(self.settings_store.get("bg_brightness"))
         self._bg_contrast = float(self.settings_store.get("bg_contrast"))
+        self._bg_saturation = float(self.settings_store.get("bg_saturation"))
+        self._bg_vignette = float(self.settings_store.get("bg_vignette"))
+        self._bg_grey_pixbuf = None
 
         self._bg_overlay = Gtk.DrawingArea()
         self._bg_overlay.set_hexpand(True)
@@ -436,6 +442,29 @@ class SugarShell(Gtk.Application):
         theme_manager.set_accent_tint(color)
 
     def _draw_bg_overlay(self, area, cr, width, height):
+        # Saturation: cross-fade a greyscale copy over the color image.
+        if self._bg_saturation < 1.0 and self._bg_grey_pixbuf is not None:
+            surf = Gdk.cairo_surface_create_from_pixbuf(
+                self._bg_grey_pixbuf, self.window.get_scale_factor()
+            )
+            if surf is not None:
+                cr.save()
+                cr.scale(
+                    width / GdkPixbuf.Pixbuf.get_width(self._bg_grey_pixbuf),
+                    height / GdkPixbuf.Pixbuf.get_height(self._bg_grey_pixbuf),
+                )
+                cr.set_source_surface(surf, 0, 0)
+                cr.paint_with_alpha(1.0 - self._bg_saturation)
+                cr.restore()
+        # Vignette: radial gradient, transparent at center, dark at edges.
+        if self._bg_vignette > 0:
+            cx, cy = width / 2, height / 2
+            r = max(cx, cy)
+            gradient = cairo.RadialGradient(cx, cy, r * 0.25, cx, cy, r)
+            gradient.add_color_stop_rgba(0, 0, 0, 0, 0)
+            gradient.add_color_stop_rgba(1, 0, 0, 0, self._bg_vignette)
+            cr.set_source(gradient)
+            cr.paint()
         # Contrast: a flat mid-grey veil that mutes the wallpaper toward
         # grey so foreground labels/icons keep their footing.
         if self._bg_contrast > 0:
@@ -450,11 +479,27 @@ class SugarShell(Gtk.Application):
             cr.set_source_rgba(0, 0, 0, min(-b, 1.0))
             cr.paint()
 
+    def _build_grey_pixbuf(self, path):
+        if path:
+            pixbuf = GdkPixbuf.Pixbuf.new_from_file(path)
+            grey = GdkPixbuf.Pixbuf.new(
+                GdkPixbuf.Pixbuf.get_colorspace(pixbuf),
+                GdkPixbuf.Pixbuf.get_has_alpha(pixbuf),
+                GdkPixbuf.Pixbuf.get_bits_per_sample(pixbuf),
+                GdkPixbuf.Pixbuf.get_width(pixbuf),
+                GdkPixbuf.Pixbuf.get_height(pixbuf),
+            )
+            pixbuf.saturate_and_pixelate(grey, 0.0, False)
+            return grey
+        return None
+
     def set_background(self, path):
         if path:
             self._background_picture.set_filename(path)
+            self._bg_grey_pixbuf = self._build_grey_pixbuf(path)
         else:
             self._background_picture.set_filename(None)
+            self._bg_grey_pixbuf = None
 
     def set_bg_brightness(self, value):
         self._bg_brightness = float(value)
@@ -462,6 +507,14 @@ class SugarShell(Gtk.Application):
 
     def set_bg_contrast(self, value):
         self._bg_contrast = float(value)
+        self._bg_overlay.queue_draw()
+
+    def set_bg_saturation(self, value):
+        self._bg_saturation = float(value)
+        self._bg_overlay.queue_draw()
+
+    def set_bg_vignette(self, value):
+        self._bg_vignette = float(value)
         self._bg_overlay.queue_draw()
 
     def _on_toplevel_open(self, wayland_app_id, title):

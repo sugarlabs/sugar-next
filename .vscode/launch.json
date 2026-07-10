@@ -41,6 +41,14 @@
             "cwd": "${workspaceFolder}/sugar-next"
         },
         {
+            "name": "Sugar Next (container)",
+            "detail": "runs Sugar Next in a podman container against the host Wayland session",
+            "type": "node-terminal",
+            "request": "launch",
+            "command": "${workspaceFolder}/sugar-next/dev/run-container.sh",
+            "cwd": "${workspaceFolder}/sugar-next"
+        },
+        {
             "name": "Sugar Next (editable src)",
             "detail": "runs against sugar-next/sugar_next in-place, for active development",
             "type": "debugpy",

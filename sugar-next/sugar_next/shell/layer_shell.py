@@ -12,6 +12,7 @@ log = logging.getLogger("sugar-next.layer-shell")
 
 _NAMESPACE_CANDIDATES = ("Gtk4LayerShell", "GtkLayerShell")
 _LAYER_SHELL_PRELOAD_BASENAME = "liblayer-shell-preload.so"
+_ENABLE_ENV = "SUGAR_NEXT_LAYER_SHELL"
 
 
 def load_layer_shell():
@@ -33,6 +34,9 @@ def configure_shell_window(window, layer_shell=None) -> bool:
     incompatible module are non-fatal; the caller can keep its xdg_toplevel
     fallback and Hyprland window rules.
     """
+    if os.environ.get(_ENABLE_ENV) != "1" and layer_shell is None:
+        return False
+
     layer_shell = layer_shell or load_layer_shell()
     if layer_shell is None:
         return False

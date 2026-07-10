@@ -15,6 +15,9 @@ set -euo pipefail
 DEV_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "$DEV_DIR/.." && pwd)"
 
+export WLR_WL_OUTPUTS="${WLR_WL_OUTPUTS:-1}"
+export WLR_HEADLESS_OUTPUTS="${WLR_HEADLESS_OUTPUTS:-0}"
+
 VENV_PY="${SUGAR_NEXT_PYTHON:-$HOME/.local/share/sugar-next/venv/bin/python3}"
 if [ ! -x "$VENV_PY" ]; then
     echo "error: venv python not found at $VENV_PY" >&2
@@ -29,13 +32,13 @@ fi
 
 # Command Wayfire's autostart will run for the shell. PYTHONPATH points at
 # the in-place source so edits take effect without reinstalling.
-export SUGAR_NEXT_CMD="cd '$PROJECT_DIR' && PYTHONPATH='$PROJECT_DIR' '$VENV_PY' -m sugar_next.shell.main"
+export SUGAR_NEXT_CMD="cd '$PROJECT_DIR' && GDK_BACKEND=wayland PYTHONPATH='$PROJECT_DIR' '$VENV_PY' -m sugar_next.shell.main"
 
 # With WAYLAND_DISPLAY set, wlroots auto-selects the nested Wayland backend
-# (a window in the host session) — it opens that plus a virtual headless
-# output, which is expected. Do NOT set WLR_BACKENDS=wayland: on wlroots
-# 0.19 that paradoxically yields a headless-only session with no window.
+# (a window in the host session). Avoid adding an output mode here: on wlroots
+# 0.19 fixed-mode nested outputs can reject custom modes and disable WL-1.
 
 echo "Starting nested Wayfire; Sugar Next will autostart inside it."
+echo "Nested backend outputs: WLR_WL_OUTPUTS=${WLR_WL_OUTPUTS}, WLR_HEADLESS_OUTPUTS=${WLR_HEADLESS_OUTPUTS}"
 echo "Close the Wayfire window to exit."
-exec wayfire -c "$DEV_DIR/wayfire.ini"
+wayfire -c "$DEV_DIR/wayfire.ini"

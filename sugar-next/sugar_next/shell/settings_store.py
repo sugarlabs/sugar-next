@@ -20,6 +20,10 @@ _DEFAULTS = {
     # contrast: 0.0 (none) .. 1.0 (flat mid-grey veil).
     "bg_brightness": -0.25,
     "bg_contrast": 0.0,
+    # saturation: 0.0 (greyscale) .. 1.0 (full color).
+    # vignette: 0.0 (off) .. 1.0 (fully black edges).
+    "bg_saturation": 1.0,
+    "bg_vignette": 0.0,
 }
 
 _ICON_SIZES = {"small": 32, "medium": 48, "large": 64}

@@ -279,6 +279,58 @@ class SettingsWindow(Gtk.Window):
         contrast_row.append(self._contrast_pct)
         section.append(contrast_row)
 
+        # Saturation: cross-fade to greyscale, 0..1.
+        sat_row = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        sat_row.append(Gtk.Label(label="Saturation", xalign=0))
+        shint = Gtk.Label(
+            label="Desaturate the background toward greyscale",
+            xalign=0,
+        )
+        shint.add_css_class("dim-label")
+        sat_row.append(shint)
+        sat_adj = Gtk.Adjustment(
+            value=self._store.get("bg_saturation"),
+            lower=0.0, upper=1.0, step_increment=0.05,
+        )
+        sat_scale = Gtk.Scale(
+            orientation=Gtk.Orientation.HORIZONTAL, adjustment=sat_adj
+        )
+        sat_scale.set_hexpand(True)
+        sat_scale.set_draw_value(False)
+        sat_scale.connect("value-changed", self._on_bg_saturation_changed)
+        sat_row.append(sat_scale)
+        self._sat_pct = Gtk.Label(
+            label=f"{int(sat_adj.get_value() * 100)}%", xalign=1
+        )
+        sat_row.append(self._sat_pct)
+        section.append(sat_row)
+
+        # Vignette: radial darkening at edges, 0..1.
+        vig_row = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        vig_row.append(Gtk.Label(label="Vignette", xalign=0))
+        vhint = Gtk.Label(
+            label="Darken the edges to draw focus to the center",
+            xalign=0,
+        )
+        vhint.add_css_class("dim-label")
+        vig_row.append(vhint)
+        vig_adj = Gtk.Adjustment(
+            value=self._store.get("bg_vignette"),
+            lower=0.0, upper=1.0, step_increment=0.05,
+        )
+        vig_scale = Gtk.Scale(
+            orientation=Gtk.Orientation.HORIZONTAL, adjustment=vig_adj
+        )
+        vig_scale.set_hexpand(True)
+        vig_scale.set_draw_value(False)
+        vig_scale.connect("value-changed", self._on_bg_vignette_changed)
+        vig_row.append(vig_scale)
+        self._vig_pct = Gtk.Label(
+            label=f"{int(vig_adj.get_value() * 100)}%", xalign=1
+        )
+        vig_row.append(self._vig_pct)
+        section.append(vig_row)
+
         box.append(section)
         return scrolled
 
@@ -515,6 +567,20 @@ class SettingsWindow(Gtk.Window):
         self._contrast_pct.set_label(f"{int(val * 100)}%")
         if self._shell is not None and hasattr(self._shell, "set_bg_contrast"):
             self._shell.set_bg_contrast(val)
+
+    def _on_bg_saturation_changed(self, scale):
+        val = scale.get_value()
+        self._store.set("bg_saturation", val)
+        self._sat_pct.set_label(f"{int(val * 100)}%")
+        if self._shell is not None and hasattr(self._shell, "set_bg_saturation"):
+            self._shell.set_bg_saturation(val)
+
+    def _on_bg_vignette_changed(self, scale):
+        val = scale.get_value()
+        self._store.set("bg_vignette", val)
+        self._vig_pct.set_label(f"{int(val * 100)}%")
+        if self._shell is not None and hasattr(self._shell, "set_bg_vignette"):
+            self._shell.set_bg_vignette(val)
 
     def _update_active_swatch(self, hex_color):
         for color, btn in self._swatch_buttons:

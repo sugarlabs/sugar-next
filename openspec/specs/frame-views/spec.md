@@ -8,14 +8,15 @@ navigation concern, as in Sugar classic's four views (Neighborhood,
 Groups, Home, Activity). F3 is reserved for a future Groups/Neighborhood
 view; the earlier Search view was retired in favor of putting favorites
 directly on the Desktop (see the `desktop-pie-menu` change).
-
 ## Requirements
-
 ### Requirement: Views accessible from the Frame
 
 The shell SHALL provide two views — Desktop, Apps — accessible from the
 Frame (overlay bar at screen bottom / F6), NOT from Settings. The Frame
-SHALL show a view switcher alongside running windows.
+SHALL show a view switcher alongside running windows. The Frame's
+running-windows list SHALL be sourced from the shared app-state registry
+(see `app-state-registry` capability) rather than private per-Frame
+tracking.
 
 #### Scenario: Switching from Desktop to Apps view
 - **WHEN** the learner presses F6 (Frame) and selects the "Apps" button
@@ -27,6 +28,11 @@ SHALL show a view switcher alongside running windows.
 - **THEN** it shows: [Desktop] [Apps] buttons on the left, running
   windows on the right. Favorites and Settings live in the Desktop pie
   menu, not the Frame.
+
+#### Scenario: Running list reflects the shared registry
+- **WHEN** an app opens or closes and the app-state registry updates
+- **THEN** the Frame's running-windows list updates to match, without
+  maintaining its own separate open/closed bookkeeping
 
 ### Requirement: Settings loses layout selector
 
@@ -94,3 +100,4 @@ see the last active view (persisted in config).
 #### Scenario: Subsequent launch
 - **WHEN** the shell starts and a view was previously selected
 - **THEN** that same view is shown
+

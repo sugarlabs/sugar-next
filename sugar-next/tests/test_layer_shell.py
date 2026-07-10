@@ -43,7 +43,8 @@ class FakeLayerShell:
         self.calls.append(("set_exclusive_zone", window, zone))
 
 
-def test_configure_shell_window_returns_false_without_binding():
+def test_configure_shell_window_returns_false_without_binding(monkeypatch):
+    monkeypatch.setenv("SUGAR_NEXT_LAYER_SHELL", "1")
     assert configure_shell_window(object(), layer_shell=None) is False
 
 
@@ -69,6 +70,11 @@ def test_configure_shell_window_applies_layer_shell():
 def test_configure_shell_window_handles_incompatible_binding():
     broken = types.SimpleNamespace(init_for_window=lambda _window: 1 / 0)
     assert configure_shell_window(object(), layer_shell=broken) is False
+
+
+def test_configure_shell_window_is_opt_in_without_injected_binding(monkeypatch):
+    monkeypatch.delenv("SUGAR_NEXT_LAYER_SHELL", raising=False)
+    assert configure_shell_window(object()) is False
 
 
 def test_remove_layer_shell_preload_from_env_removes_only_helper():

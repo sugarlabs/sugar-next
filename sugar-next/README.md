@@ -60,7 +60,7 @@ to be as easy to hack on as it is to use. If setting up the dev
 environment, running tests, or understanding the code feels harder than it
 should, that is a bug — please report it.
 
-## Quick start
+## Quick Start
 
 Requires GTK4 and PyGObject from your distro:
 
@@ -77,11 +77,109 @@ cd sugar-next/sugar-next
 sugar-next
 ```
 
-> Note: the `sugar-next/` directory inside the repo is the actual project.
-> Clone the whole repo, then `cd sugar-next/sugar-next` to find the shell.
+> Note: in this monorepo, `sugar-next/` is the actual project directory.
+> Most commands below assume you are either in that directory or using the
+> repository root paths shown by the VS Code tasks.
 
-For Podman, pip install, and development instructions see the full
-[HIG.md](HIG.md) and the `openspec/` change documents.
+## Development Runners
+
+The repo includes the same runners exposed by `.vscode/tasks.json` and
+`.vscode/launch.json`.
+
+| VS Code task / launch config | Command | Use when |
+| --- | --- | --- |
+| `Run Sugar Next` / `Sugar Next (editable src)` | `PYTHONPATH=. python -m sugar_next.shell.main` | Fast local shell run inside your current compositor |
+| `Run Sugar Next (nested Wayfire)` | `dev/run-wayfire.sh` | wlroots fallback testing with toplevel open/close/focus events |
+| `Run Sugar Next (nested Hyprland)` | `dev/run-hyprland-nested.sh` | Target session-compositor path with Hyprland IPC |
+| `Run Sugar Next (container)` | `dev/run-container.sh` | Run from an OCI image against the host Wayland socket |
+| `Bootstrap Sugar Next` | `./bootstrap.sh` | Install into `~/.local/share/sugar-next/venv` and create a desktop entry |
+| `Test Sugar Next` | `python -m pytest tests/` | Run the shell test suite |
+
+Install `debugpy` once if you want the debugpy launch configs:
+
+```sh
+~/.local/share/sugar-next/venv/bin/pip install debugpy
+```
+
+## Nested Wayfire
+
+Wayfire runs in a nested host window:
+
+```sh
+dev/run-wayfire.sh
+```
+
+Useful overrides:
+
+```sh
+WLR_WL_OUTPUTS=1 dev/run-wayfire.sh
+WLR_HEADLESS_OUTPUTS=0 dev/run-wayfire.sh
+```
+
+The `xkbcomp` "not fatal to the X server" messages come from Xwayland
+keyboard-map setup and can usually be ignored. The runner forces the Sugar
+Next shell itself onto GTK's Wayland backend. The runner does not set an
+explicit `[output:WL-1]` mode because wlroots 0.19 can reject nested custom
+modes and disable the Wayland output.
+
+## Nested Hyprland
+
+Hyprland is the target compositor for Sugar Next as a standalone session.
+For iterative development inside your existing Wayland session:
+
+```sh
+dev/run-hyprland-nested.sh
+```
+
+Useful overrides:
+
+```sh
+SUGAR_NEXT_NESTED_SIZE=900x560 dev/run-hyprland-nested.sh
+SUGAR_NEXT_LAYER_SHELL=1 dev/run-hyprland-nested.sh   # experimental
+```
+
+The runner sets `AQ_BACKENDS=wayland`, exports a Sugar Next desktop
+environment for the nested session, and uses `start-hyprland` when
+available.
+
+## Container Run
+
+The container runner builds `sugar-next:dev` and runs the editable source
+tree against your host Wayland socket:
+
+```sh
+dev/run-container.sh
+```
+
+Requirements:
+
+| Tool | Notes |
+| --- | --- |
+| Podman | Default engine. Use `SUGAR_NEXT_CONTAINER_ENGINE=docker` for Docker. |
+| Wayland session | `WAYLAND_DISPLAY` and `XDG_RUNTIME_DIR` must be set. |
+| GPU device access | The runner passes `--device /dev/dri`. |
+
+Useful overrides:
+
+```sh
+SUGAR_NEXT_CONTAINER_BUILD=0 dev/run-container.sh
+SUGAR_NEXT_CONTAINER_IMAGE=sugar-next:test dev/run-container.sh
+SUGAR_NEXT_CONTAINER_ENGINE=docker dev/run-container.sh
+```
+
+Manual equivalent:
+
+```sh
+podman build -t sugar-next:dev -f Containerfile .
+dev/run-container.sh
+```
+
+If rootless Podman networking fails after a kernel update with a `pasta` or
+`/dev/net/tun` error, rebuild once with:
+
+```sh
+podman build --network=host -t sugar-next:dev -f Containerfile .
+```
 
 ## Acknowledgements
 

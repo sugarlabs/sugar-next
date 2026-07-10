@@ -31,19 +31,30 @@ if [ -z "${WAYLAND_DISPLAY:-}" ]; then
 fi
 
 export AQ_BACKENDS=wayland
+export XDG_CURRENT_DESKTOP="${SUGAR_NEXT_XDG_CURRENT_DESKTOP:-Hyprland:SugarNext}"
+export XDG_SESSION_DESKTOP="${SUGAR_NEXT_XDG_SESSION_DESKTOP:-sugar-next}"
+export XDG_SESSION_TYPE="${XDG_SESSION_TYPE:-wayland}"
 export SUGAR_NEXT_PROJECT_DIR="$PROJECT_DIR"
 export SUGAR_NEXT_PYTHON="$VENV_PY"
 export SUGAR_NEXT_NESTED_SIZE="${SUGAR_NEXT_NESTED_SIZE:-1024x640}"
 export SUGAR_NEXT_NESTED_SCALE="${SUGAR_NEXT_NESTED_SCALE:-1}"
-if [ -z "${SUGAR_NEXT_LAYER_SHELL_PRELOAD:-}" ] &&
+export SUGAR_NEXT_LAYER_SHELL="${SUGAR_NEXT_LAYER_SHELL:-0}"
+if [ "$SUGAR_NEXT_LAYER_SHELL" = "1" ] &&
+        [ -z "${SUGAR_NEXT_LAYER_SHELL_PRELOAD:-}" ] &&
         [ -r /usr/lib/liblayer-shell-preload.so ]; then
     export SUGAR_NEXT_LAYER_SHELL_PRELOAD=/usr/lib/liblayer-shell-preload.so
 fi
 SUGAR_NEXT_DECORATED_HOST="${SUGAR_NEXT_DECORATED_HOST:-0}"
+HYPRLAND_CMD=(Hyprland)
+if command -v start-hyprland >/dev/null 2>&1; then
+    HYPRLAND_CMD=(start-hyprland --)
+fi
 
 echo "Starting nested Hyprland; Sugar Next will autostart inside it."
 echo "Nested output: ${SUGAR_NEXT_NESTED_SIZE}@60 scale ${SUGAR_NEXT_NESTED_SCALE}"
-if [ -n "${SUGAR_NEXT_LAYER_SHELL_PRELOAD:-}" ]; then
+echo "Desktop env: XDG_CURRENT_DESKTOP=${XDG_CURRENT_DESKTOP}"
+if [ "$SUGAR_NEXT_LAYER_SHELL" = "1" ] &&
+        [ -n "${SUGAR_NEXT_LAYER_SHELL_PRELOAD:-}" ]; then
     echo "Layer-shell preload: ${SUGAR_NEXT_LAYER_SHELL_PRELOAD}"
 fi
 echo "Close the Hyprland window to exit."
@@ -60,8 +71,8 @@ if [ "$SUGAR_NEXT_DECORATED_HOST" = "1" ] &&
             -W "$width" -H "$height" \
             -w "$width" -h "$height" \
             -r 60 \
-            -- Hyprland -c "$DEV_DIR/hyprland.lua"
+            -- "${HYPRLAND_CMD[@]}" -c "$DEV_DIR/hyprland.lua"
     fi
 fi
 
-exec Hyprland -c "$DEV_DIR/hyprland.lua"
+exec "${HYPRLAND_CMD[@]}" -c "$DEV_DIR/hyprland.lua"

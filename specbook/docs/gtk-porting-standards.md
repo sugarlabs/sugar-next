@@ -92,15 +92,16 @@ entry that runs `Hyprland -c /etc/sugar-next/hyprland.lua`, using
 API uses `hl.on("hyprland.start", ...)` plus `hl.exec_cmd(...)` for
 autostart on the tested 0.55 series.
 
-Sugar Next prefers GTK layer-shell for its own root surface. If a GI
-namespace such as `Gtk4LayerShell` or `GtkLayerShell` is installed, the main
-window is initialized as a layer surface anchored to every edge; otherwise
-it falls back to a regular `xdg_toplevel` and Hyprland fullscreen window
-rules make it behave like the shell. With `gtk4-layer-shell` on Arch/CachyOS,
+Sugar Next has an experimental GTK layer-shell path for its own root
+surface. Enable it with `SUGAR_NEXT_LAYER_SHELL=1`. If a GI namespace such
+as `Gtk4LayerShell` or `GtkLayerShell` is installed, the main window is
+initialized as a layer surface anchored to every edge; otherwise it falls
+back to a regular `xdg_toplevel` and Hyprland fullscreen window rules make
+it behave like the shell. With `gtk4-layer-shell` on Arch/CachyOS,
 PyGObject also needs the package's preload helper so `libgtk4-layer-shell`
 loads before `libwayland`; the dev runner exports
-`LD_PRELOAD=/usr/lib/liblayer-shell-preload.so` for the Sugar Next process
-when that file exists.
+`LD_PRELOAD=/usr/lib/liblayer-shell-preload.so` only when
+`SUGAR_NEXT_LAYER_SHELL=1`.
 
 For development under GNOME, the Hyprland Wayland backend does not request a
 host titlebar itself. `gamescope` can be tried with
