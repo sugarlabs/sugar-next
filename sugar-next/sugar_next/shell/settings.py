@@ -36,16 +36,15 @@ _KEYBINDINGS = [
 ]
 
 _SETTINGS_CSS = """
+    window.settings-window,
     .settings-window {
-        background: linear-gradient(180deg,
-            rgba(255,255,255,0.97) 0%,
-            rgba(0,0,0,0.02) 100%
-        );
+        background-color: var(--sn-surface);
+        color: var(--sn-text);
     }
     .settings-bg-thumb {
         border-radius: 12px;
-        border: 1px solid rgba(0,0,0,0.10);
-        background-color: var(--sn-bg);
+        border: 1px solid rgba(128,128,128,0.25);
+        background-color: var(--sn-bg-alt);
     }
     .settings-tab-page {
         padding: 16px;
@@ -83,6 +82,7 @@ class SettingsWindow(Gtk.Window):
         self.set_default_size(480, 520)
         self.set_resizable(False)
         self.set_hide_on_close(True)
+        self.add_css_class("settings-window")
 
         provider = Gtk.CssProvider()
         provider.load_from_string(_SETTINGS_CSS)
@@ -182,31 +182,59 @@ class SettingsWindow(Gtk.Window):
         )
         section.append(self._bg_name_label)
 
-        opacity_row = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
-        opacity_row.append(
-            Gtk.Label(label="Background dim", xalign=0)
+        # Brightness: -1 (black) .. 0 .. +1 (white). Zero-marked so the
+        # neutral point is obvious.
+        bright_row = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        bright_row.append(Gtk.Label(label="Brightness", xalign=0))
+        hint = Gtk.Label(
+            label="Darken (left) or lighten (right) the background",
+            xalign=0,
         )
-        opacity_row.append(
-            Gtk.Label(
-                label="Darken the background to keep labels readable",
-                xalign=0,
-            )
+        hint.add_css_class("dim-label")
+        bright_row.append(hint)
+        bright_adj = Gtk.Adjustment(
+            value=self._store.get("bg_brightness"),
+            lower=-1.0, upper=1.0, step_increment=0.05,
         )
-        opacity_row.get_last_child().add_css_class("dim-label")
-        adj = Gtk.Adjustment(
-            value=self._store.get("bg_dim"),
-            lower=0.0, upper=0.8, step_increment=0.05,
+        bright_scale = Gtk.Scale(
+            orientation=Gtk.Orientation.HORIZONTAL, adjustment=bright_adj
         )
-        opacity_scale = Gtk.Scale(orientation=Gtk.Orientation.HORIZONTAL, adjustment=adj)
-        opacity_scale.set_hexpand(True)
-        opacity_scale.set_draw_value(False)
-        opacity_scale.connect("value-changed", self._on_bg_opacity_changed)
-        opacity_row.append(opacity_scale)
-        self._opacity_pct = Gtk.Label(
-            label=f"{int(adj.get_value() * 100)}%", xalign=1
+        bright_scale.set_hexpand(True)
+        bright_scale.set_draw_value(False)
+        bright_scale.add_mark(0.0, Gtk.PositionType.BOTTOM, None)
+        bright_scale.connect("value-changed", self._on_bg_brightness_changed)
+        bright_row.append(bright_scale)
+        self._brightness_pct = Gtk.Label(
+            label=f"{int(bright_adj.get_value() * 100):+d}%", xalign=1
         )
-        opacity_row.append(self._opacity_pct)
-        section.append(opacity_row)
+        bright_row.append(self._brightness_pct)
+        section.append(bright_row)
+
+        # Contrast: flat grey veil, 0..1.
+        contrast_row = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        contrast_row.append(Gtk.Label(label="Contrast", xalign=0))
+        chint = Gtk.Label(
+            label="Mute the background toward grey for readable labels",
+            xalign=0,
+        )
+        chint.add_css_class("dim-label")
+        contrast_row.append(chint)
+        contrast_adj = Gtk.Adjustment(
+            value=self._store.get("bg_contrast"),
+            lower=0.0, upper=1.0, step_increment=0.05,
+        )
+        contrast_scale = Gtk.Scale(
+            orientation=Gtk.Orientation.HORIZONTAL, adjustment=contrast_adj
+        )
+        contrast_scale.set_hexpand(True)
+        contrast_scale.set_draw_value(False)
+        contrast_scale.connect("value-changed", self._on_bg_contrast_changed)
+        contrast_row.append(contrast_scale)
+        self._contrast_pct = Gtk.Label(
+            label=f"{int(contrast_adj.get_value() * 100)}%", xalign=1
+        )
+        contrast_row.append(self._contrast_pct)
+        section.append(contrast_row)
 
         box.append(section)
 
@@ -321,12 +349,19 @@ class SettingsWindow(Gtk.Window):
             if dg is not None and hasattr(dg, "set_background"):
                 dg.set_background(path)
 
-    def _on_bg_opacity_changed(self, scale):
+    def _on_bg_brightness_changed(self, scale):
         val = scale.get_value()
-        self._store.set("bg_dim", val)
-        self._opacity_pct.set_label(f"{int(val * 100)}%")
-        if self._shell is not None and hasattr(self._shell, "set_bg_dim"):
-            self._shell.set_bg_dim(val)
+        self._store.set("bg_brightness", val)
+        self._brightness_pct.set_label(f"{int(val * 100):+d}%")
+        if self._shell is not None and hasattr(self._shell, "set_bg_brightness"):
+            self._shell.set_bg_brightness(val)
+
+    def _on_bg_contrast_changed(self, scale):
+        val = scale.get_value()
+        self._store.set("bg_contrast", val)
+        self._contrast_pct.set_label(f"{int(val * 100)}%")
+        if self._shell is not None and hasattr(self._shell, "set_bg_contrast"):
+            self._shell.set_bg_contrast(val)
 
     def _update_active_swatch(self, hex_color):
         for color, btn in self._swatch_buttons:

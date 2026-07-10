@@ -4,7 +4,7 @@ import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Gdk", "4.0")
-from gi.repository import Gdk, Gtk
+from gi.repository import Gdk, Gtk, GLib
 
 from sugar_next.api.hooks import registry as hook_registry
 from sugar_next.shell.app_grid import SugarAppGrid
@@ -101,6 +101,21 @@ class SugarShell(Gtk.Application):
                 background: var(--sn-accent);
                 color: white;
             }
+            .frame-handle {
+                min-width: 52px;
+                min-height: 14px;
+                padding: 0;
+                margin-top: 0;
+                border: none;
+                border-radius: 0 0 8px 8px;
+                background: var(--sn-accent);
+                opacity: 0.6;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.35);
+                transition: opacity 150ms ease;
+            }
+            .frame-handle:hover {
+                opacity: 0.95;
+            }
             """
         )
         Gtk.StyleContext.add_provider_for_display(
@@ -156,14 +171,20 @@ class SugarShell(Gtk.Application):
             self._background_picture.set_filename(bg_path)
         self._background_picture.add_css_class("home-view-bg")
 
+        # Background adjustment overlay. A single flat wash drawn over the
+        # wallpaper and *under* the Home View, so every layout (app-grid,
+        # search-first, desktop-grid) sees the same treatment.
+        #   brightness: -1.0 (black) .. 0 (none) .. +1.0 (white)
+        #   contrast:    0.0 (none)  .. 1.0 (flat mid-grey veil)
+        self._bg_brightness = float(self.settings_store.get("bg_brightness"))
+        self._bg_contrast = float(self.settings_store.get("bg_contrast"))
+
         self._bg_overlay = Gtk.DrawingArea()
         self._bg_overlay.set_hexpand(True)
         self._bg_overlay.set_vexpand(True)
+        self._bg_overlay.set_can_target(False)
         self._bg_overlay.add_css_class("home-view-bg-overlay")
         self._bg_overlay.set_draw_func(self._draw_bg_overlay)
-
-        bg_dim = self.settings_store.get("bg_dim")
-        self._bg_overlay.set_opacity(bg_dim)
 
         home_overlay = Gtk.Overlay()
         home_overlay.set_child(self._background_picture)
@@ -176,22 +197,51 @@ class SugarShell(Gtk.Application):
         self.window.set_child(shell_overlay)
         shell_overlay._frame = self.frame
 
-        # Hot corner click target at top-right — click opens Frame.
+        # Visible pull-down handle at the top-center — a small accent pill
+        # that reveals the Frame on click or hover. Centered so it never
+        # overlaps the Frame's settings button at the right edge. It hides
+        # itself while the Frame is open (the Frame's own top edge takes
+        # over) and reappears when the Frame is dismissed.
         self._hot_corner = Gtk.Button()
-        self._hot_corner.add_css_class("flat")
-        self._hot_corner.set_opacity(0.0)
-        self._hot_corner.set_size_request(80, 6)
-        self._hot_corner.set_halign(Gtk.Align.END)
+        self._hot_corner.add_css_class("frame-handle")
+        self._hot_corner.set_halign(Gtk.Align.CENTER)
         self._hot_corner.set_valign(Gtk.Align.START)
         self._hot_corner.set_tooltip_text("Click or hover to reveal the Frame")
-        self._hot_corner.connect("clicked", lambda _b: self.frame.reveal())
+        self._hot_corner.connect("clicked", self._on_handle_clicked)
         shell_overlay.add_overlay(self._hot_corner)
+
+        # Keep the handle out of the way whenever the Frame is showing.
+        self.frame.connect(
+            "notify::child-revealed", self._on_frame_reveal_changed
+        )
+
+        # Classic-Sugar auto-Frame: reveal the Frame when the shell loses
+        # focus (an activity has taken the screen, so the user always has a
+        # way back). It is NOT hidden when the window regains focus — the
+        # Frame lives inside the shell window, so regaining window focus is
+        # not the same as leaving the Frame. Instead it hides when the
+        # pointer leaves the Frame's own area (see the motion controller on
+        # ``self.frame`` below). A manual dismiss is respected until the
+        # next focus change.
+        self._frame_manually_dismissed = False
+        # Monotonic time (µs) until which a spurious pointer `leave` right
+        # after revealing the Frame must be ignored. Revealing slides the
+        # Frame out from under the pointer, which fires `leave` immediately
+        # and would otherwise snap it shut so a click "does nothing".
+        self._frame_leave_guard_until = 0
+        self.window.connect("notify::is-active", self._on_window_active_changed)
+
+        # Hide the Frame once the pointer leaves it (but not while the shell
+        # is unfocused — then an activity owns the screen and the Frame
+        # should stay put as the way back).
+        frame_motion = Gtk.EventControllerMotion()
+        frame_motion.connect("leave", self._on_frame_pointer_left)
+        self.frame.add_controller(frame_motion)
 
         # Click outside the Frame closes it.
         close_gesture = Gtk.GestureClick()
         close_gesture.connect("pressed", self._on_background_pressed)
         home_overlay.add_controller(close_gesture)
-        shell_overlay.add_overlay(self._hot_corner)
 
         self.settings_panel = SettingsPanel(
             home_view=self.home_view, store=self.settings_store, shell=self
@@ -209,11 +259,48 @@ class SugarShell(Gtk.Application):
 
         self.window.present()
 
+    def _on_window_active_changed(self, window, _pspec):
+        # Focus changed: this is a fresh context, so any earlier manual
+        # dismiss no longer applies.
+        self._frame_manually_dismissed = False
+        if not window.get_property("is-active"):
+            # Shell lost focus (an activity took over) — surface the Frame
+            # as the user's way back. Regaining focus does *not* hide it;
+            # that is left to the pointer leaving the Frame.
+            self.frame.reveal()
+
+    def _reveal_frame(self):
+        # Guard against the `leave` that fires as the Frame slides out from
+        # under the pointer, so it doesn't immediately close again.
+        self._frame_leave_guard_until = GLib.get_monotonic_time() + 400_000
+        self.frame.reveal()
+
+    def _on_handle_clicked(self, _button):
+        self._reveal_frame()
+
+    def _on_frame_pointer_left(self, _controller):
+        # Ignore the spurious leave right after a reveal (see _reveal_frame).
+        if GLib.get_monotonic_time() < self._frame_leave_guard_until:
+            return
+        # Pointer left the Frame. Tuck it away — unless the shell is
+        # unfocused, in which case an activity owns the screen and the
+        # Frame must remain as the way back.
+        if self.window.get_property("is-active"):
+            self.frame.set_reveal_child(False)
+
     def _on_background_pressed(self, gesture, n_press, x, y):
+        # Manual dismiss: remember it so auto-Frame does not immediately
+        # re-open while the shell stays unfocused.
+        if not self.window.get_property("is-active"):
+            self._frame_manually_dismissed = True
         self.frame.set_reveal_child(False)
 
     def _on_key_pressed(self, controller, keyval, keycode, state):
         if keyval == Gdk.KEY_F6:
+            if self.frame.get_reveal_child() and not self.window.get_property(
+                "is-active"
+            ):
+                self._frame_manually_dismissed = True
             self.frame.toggle()
             return True
         if keyval in (Gdk.KEY_F1, Gdk.KEY_F10):
@@ -227,7 +314,16 @@ class SugarShell(Gtk.Application):
 
     def _on_motion(self, controller, x, y):
         if y <= 3:
-            self.frame.reveal()
+            self._reveal_frame()
+
+    def _on_frame_reveal_changed(self, frame, _pspec):
+        # Fade the pull-down handle out while the Frame is visible instead
+        # of hiding it: set_visible(False) collapses the overlay child and
+        # forces a re-layout mid-animation, which makes the Frame "jump".
+        # Opacity + can_target keeps its slot reserved, so no reflow.
+        revealed = frame.get_child_revealed()
+        self._hot_corner.set_opacity(0.0 if revealed else 1.0)
+        self._hot_corner.set_can_target(not revealed)
 
     def _on_shutdown(self, app):
         self.toplevel_tracker.stop()
@@ -240,8 +336,19 @@ class SugarShell(Gtk.Application):
         theme_manager.set_accent_tint(color)
 
     def _draw_bg_overlay(self, area, cr, width, height):
-        cr.set_source_rgba(0, 0, 0, 1.0)
-        cr.paint()
+        # Contrast: a flat mid-grey veil that mutes the wallpaper toward
+        # grey so foreground labels/icons keep their footing.
+        if self._bg_contrast > 0:
+            cr.set_source_rgba(0.5, 0.5, 0.5, self._bg_contrast)
+            cr.paint()
+        # Brightness: push toward white (positive) or black (negative).
+        b = self._bg_brightness
+        if b > 0:
+            cr.set_source_rgba(1, 1, 1, min(b, 1.0))
+            cr.paint()
+        elif b < 0:
+            cr.set_source_rgba(0, 0, 0, min(-b, 1.0))
+            cr.paint()
 
     def set_background(self, path):
         if path:
@@ -249,8 +356,13 @@ class SugarShell(Gtk.Application):
         else:
             self._background_picture.set_filename(None)
 
-    def set_bg_dim(self, value):
-        self._bg_overlay.set_opacity(value)
+    def set_bg_brightness(self, value):
+        self._bg_brightness = float(value)
+        self._bg_overlay.queue_draw()
+
+    def set_bg_contrast(self, value):
+        self._bg_contrast = float(value)
+        self._bg_overlay.queue_draw()
 
     def _on_toplevel_open(self, wayland_app_id, title):
         pass

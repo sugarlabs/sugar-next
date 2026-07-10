@@ -68,11 +68,6 @@ class SugarDesktopGrid(Gtk.Overlay, HomeViewLayout):
             text-shadow: 0 1px 3px rgba(0,0,0,0.7);
             font-size: 10pt;
         }
-        .desktop-grid-background {
-            background-color: var(--sn-bg);
-            background-size: cover;
-            background-position: center;
-        }
         .desktop-grid-folder label {
             color: #e0e0e0;
             text-shadow: 0 1px 3px rgba(0,0,0,0.7);
@@ -90,19 +85,17 @@ class SugarDesktopGrid(Gtk.Overlay, HomeViewLayout):
             Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
         )
 
-        self._background = Gtk.Picture()
-        self._background.add_css_class("desktop-grid-background")
-        self._background.set_content_fit(Gtk.ContentFit.COVER)
-        self._background.set_can_shrink(True)
-        self.set_child(self._background)
-        if background_path:
-            self.set_background(background_path)
-
+        # The desktop grid renders no wallpaper of its own: the shell-level
+        # background picture and its brightness/contrast wash sit *behind*
+        # every Home View layout, so this layout stays transparent and lets
+        # that single, uniformly-adjusted background show through. (The
+        # `set_background` method is kept as a no-op for API compatibility
+        # with the shell and Settings panel, which still call it.)
         self._stack = Gtk.Stack()
         self._stack.set_transition_type(Gtk.StackTransitionType.SLIDE_LEFT_RIGHT)
         self._stack.set_vexpand(True)
         self._stack.set_hexpand(True)
-        self.add_overlay(self._stack)
+        self.set_child(self._stack)
 
         self._root_flow = self._make_flow_box()
         self._stack.add_named(self._root_flow, "root")
@@ -114,7 +107,9 @@ class SugarDesktopGrid(Gtk.Overlay, HomeViewLayout):
         self._icon_size = 48
 
     def set_background(self, path):
-        self._background.set_filename(path)
+        # No-op: the shell owns the wallpaper (see __init__). Kept so the
+        # shell/Settings panel can call it uniformly across layouts.
+        pass
 
     def set_on_launch(self, callback):
         self._on_launch = callback

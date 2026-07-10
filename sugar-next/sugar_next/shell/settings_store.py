@@ -15,7 +15,11 @@ _DEFAULTS = {
     "contrast": "normal",  # "normal" | "high"
     "icon_size": "medium",  # "small" | "medium" | "large"
     "home_view_layout": "app-grid",
-    "bg_dim": 0.25,  # 0.0–1.0 — dark overlay over background for label contrast
+    # Background wash applied over the wallpaper, under every Home View
+    # layout. brightness: -1.0 (black) .. 0 .. +1.0 (white).
+    # contrast: 0.0 (none) .. 1.0 (flat mid-grey veil).
+    "bg_brightness": -0.25,
+    "bg_contrast": 0.0,
 }
 
 _ICON_SIZES = {"small": 32, "medium": 48, "large": 64}
@@ -52,6 +56,13 @@ class SettingsStore:
         for key in _DEFAULTS:
             if key in data:
                 self._values[key] = data[key]
+        # Migrate the old single "bg_dim" (0..1 dark overlay) to the new
+        # signed brightness control, if the new key was never written.
+        if "bg_dim" in data and "bg_brightness" not in data:
+            try:
+                self._values["bg_brightness"] = -float(data["bg_dim"])
+            except (TypeError, ValueError):
+                pass
 
     def save(self):
         self._path.parent.mkdir(parents=True, exist_ok=True)

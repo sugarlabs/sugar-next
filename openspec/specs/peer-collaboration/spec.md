@@ -1,4 +1,11 @@
-## ADDED Requirements
+## Purpose
+
+Define Sugar Next's collaboration-first peer layer — the extension-facing
+presence hooks, a demonstration link-local peer chat extension, and the
+requirement to document transport trade-offs before committing to any
+production transport.
+
+## Requirements
 
 ### Requirement: Peer presence hooks
 The extension API SHALL expose `on_peer_join` and `on_peer_leave` hooks,
@@ -26,9 +33,9 @@ chat, installed opt-in the same way as the Journal extension.
   any account or server configuration
 
 ### Requirement: Transport research documented
-A written comparison of link-local transport options (XMPP link-local,
-WebRTC, custom UDP) SHALL be produced before any transport is adopted
-beyond the demo extension.
+The project SHALL produce a written comparison of link-local transport
+options (XMPP link-local, WebRTC, custom UDP) before any transport is
+adopted beyond the demo extension.
 
 #### Scenario: Choosing a transport for future work
 - **WHEN** a future change proposes a production collaboration feature

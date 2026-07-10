@@ -19,7 +19,14 @@
       or keybinding
 - [x] 2.2 Add background image picker (file chooser, stretch/tile option)
 - [x] 2.3 Add accent color picker (presets + custom hex)
-- [x] 2.4 Add contrast slider (normal → high)
+- [x] 2.4 Add contrast slider (normal → high); polish added a background
+      Brightness (black↔white) and Contrast (grey veil) pair applied to
+      *all* Home View layouts via a single non-targetable overlay under the
+      view, replacing the earlier one-directional `bg_dim` dark overlay
+      (migrated on load). Fixed the Settings window's washed-out background
+      (now theme-token `--sn-surface`, theme-aware) and moved the Frame
+      hot-corner off the top-right so it no longer swallows Settings-button
+      clicks.
 - [x] 2.5 Add icon size control (affects active Home View layout)
 - [x] 2.6 Add Home View layout selector
 - [x] 2.7 Add extension manager (list installed, enable/disable)

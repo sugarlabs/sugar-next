@@ -79,6 +79,7 @@ class SugarFrame(Gtk.Revealer):
     def __init__(self):
         super().__init__()
         self.set_transition_type(Gtk.RevealerTransitionType.SLIDE_DOWN)
+        self.set_transition_duration(220)
         self.set_valign(Gtk.Align.START)
         self.set_halign(Gtk.Align.FILL)
 
