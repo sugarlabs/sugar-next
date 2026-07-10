@@ -93,6 +93,9 @@ For Podman, pip install, and development instructions see the full
 - **Martin Abente (tchx84)** — for the Sugarapp/Flatpak work that proved
   Sugar activities can live outside the classic shell, and for Endless OS
   inspiration.
+- **Ted Hein and Repurpose-IT** — for championing Sugar on refurbished
+  hardware and keeping the educational mission grounded in real-world
+  deployments.
 - **The Sugar Labs community** — the GSoC students, the sugar-devel
   regulars, and everyone who has contributed to keeping this project going
   since 2006.
