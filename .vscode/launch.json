@@ -25,6 +25,14 @@
             "justMyCode": false
         },
         {
+            "name": "Sugar Next (nested Wayfire — 3-state icons)",
+            "detail": "runs the shell inside a nested Wayfire compositor so window focus events work; exercises greyscale/color/focused icon states that GNOME's two-state fallback cannot show",
+            "type": "node-terminal",
+            "request": "launch",
+            "command": "${workspaceFolder}/sugar-next/dev/run-wayfire.sh",
+            "cwd": "${workspaceFolder}/sugar-next"
+        },
+        {
             "name": "Sugar Next (editable src)",
             "detail": "runs against sugar-next/sugar_next in-place, for active development",
             "type": "debugpy",
