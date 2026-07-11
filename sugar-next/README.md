@@ -165,8 +165,5 @@ podman build --network=host -t sugar-next:dev -f Containerfile .
 - **The Sugar Labs community** — the GSoC students, the sugar-devel
   regulars, and everyone who has contributed to keeping this project going
   since 2006.
-- **Endless OS Foundation** — for demonstrating that a desktop-grid launcher,
-  knowledge apps, and offline-first content can work beautifully for
-  first-time computer users.
 
 License: GPL-3.0-or-later, like the rest of Sugar.
